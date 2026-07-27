@@ -1,9 +1,13 @@
+import { ClerkProvider } from '@clerk/tanstack-react-start'
+import { auth } from '@clerk/tanstack-react-start/server'
+import { shadcn } from '@clerk/ui/themes'
 import {
   HeadContent,
   Scripts,
   createRootRouteWithContext,
   useRouter,
 } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { ReactQueryDevtoolsPanel } from '@tanstack/react-query-devtools'
@@ -22,9 +26,33 @@ export interface RouterContext {
   convexQueryClient: ConvexQueryClient
 }
 
+/**
+ * Reads the Clerk session on the server and hands the JWT to Convex, so the
+ * SSR pass renders as the signed-in user instead of flashing signed-out
+ * content before the client rehydrates.
+ *
+ * Relies on `clerkMiddleware()` being registered in `src/start.ts`.
+ */
+const fetchClerkAuth = createServerFn({ method: 'GET' }).handler(async () => {
+  const { userId, getToken } = await auth()
+  const token = await getToken({ template: 'convex' })
+
+  return { userId, token }
+})
+
 const THEME_INIT_SCRIPT = `(function(){try{var stored=window.localStorage.getItem('theme');var mode=(stored==='light'||stored==='dark'||stored==='auto')?stored:'auto';var prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;var resolved=mode==='auto'?(prefersDark?'dark':'light'):mode;var root=document.documentElement;root.classList.remove('light','dark');root.classList.add(resolved);if(mode==='auto'){root.removeAttribute('data-theme')}else{root.setAttribute('data-theme',mode)}root.style.colorScheme=resolved;}catch(e){}})();`
 
 export const Route = createRootRouteWithContext<RouterContext>()({
+  beforeLoad: async (ctx) => {
+    const { userId, token } = await fetchClerkAuth()
+
+    // Authenticates Convex queries issued during SSR (loaders, prefetches).
+    if (token) {
+      ctx.context.convexQueryClient.serverHttpClient?.setAuth(token)
+    }
+
+    return { userId, token }
+  },
   head: () => ({
     meta: [
       {
@@ -58,31 +86,33 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
-        <ConvexProvider
-          convexQueryClient={convexQueryClient}
-          queryClient={queryClient}
-        >
-          <Header />
-          {children}
-          <Footer />
-          <Toaster />
-          <TanStackDevtools
-            config={{
-              position: 'bottom-right',
-            }}
-            plugins={[
-              {
-                name: 'Tanstack Router',
-                render: <TanStackRouterDevtoolsPanel />,
-              },
-              {
-                name: 'Tanstack Query',
-                render: <ReactQueryDevtoolsPanel />,
-              },
-            ]}
-          />
-        </ConvexProvider>
-        <Scripts />
+        <ClerkProvider appearance={{ theme: shadcn }}>
+          <ConvexProvider
+            convexQueryClient={convexQueryClient}
+            queryClient={queryClient}
+          >
+            <Header />
+            {children}
+            <Footer />
+            <Toaster />
+            <TanStackDevtools
+              config={{
+                position: 'bottom-right',
+              }}
+              plugins={[
+                {
+                  name: 'Tanstack Router',
+                  render: <TanStackRouterDevtoolsPanel />,
+                },
+                {
+                  name: 'Tanstack Query',
+                  render: <ReactQueryDevtoolsPanel />,
+                },
+              ]}
+            />
+          </ConvexProvider>
+          <Scripts />
+        </ClerkProvider>
       </body>
     </html>
   )

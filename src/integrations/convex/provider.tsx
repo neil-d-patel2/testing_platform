@@ -1,6 +1,7 @@
-import { ConvexProvider } from 'convex/react'
+import { useAuth } from '@clerk/tanstack-react-start'
 import { ConvexQueryClient } from '@convex-dev/react-query'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ConvexProviderWithClerk } from 'convex/react-clerk'
 
 const CONVEX_URL = import.meta.env.VITE_CONVEX_URL
 
@@ -34,6 +35,13 @@ export function createConvexQueryClient() {
   return { convexQueryClient, queryClient }
 }
 
+/**
+ * `ConvexProviderWithClerk` keeps the Convex client's auth token in sync with
+ * Clerk's session, so every query/mutation carries a Clerk identity that
+ * `ctx.auth.getUserIdentity()` can read inside Convex functions.
+ *
+ * Must be rendered inside `ClerkProvider` — it reads Clerk's `useAuth`.
+ */
 export default function AppConvexProvider({
   convexQueryClient,
   queryClient,
@@ -44,8 +52,11 @@ export default function AppConvexProvider({
   children: React.ReactNode
 }) {
   return (
-    <ConvexProvider client={convexQueryClient.convexClient}>
+    <ConvexProviderWithClerk
+      client={convexQueryClient.convexClient}
+      useAuth={useAuth}
+    >
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </ConvexProvider>
+    </ConvexProviderWithClerk>
   )
 }

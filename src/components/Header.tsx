@@ -1,4 +1,10 @@
 import { Link } from '@tanstack/react-router'
+import {
+  Show,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from '@clerk/tanstack-react-start'
 import ThemeToggle from './ThemeToggle'
 
 export default function Header() {
@@ -84,6 +90,29 @@ export default function Header() {
           </a>
 
           <ThemeToggle />
+
+          {/* `Show` replaced the `SignedIn`/`SignedOut` pair in @clerk/react v6. */}
+          <Show when="signed-in">
+            <UserButton />
+          </Show>
+          <Show when="signed-out">
+            <SignInButton mode="modal">
+              <button
+                type="button"
+                className="nav-link cursor-pointer bg-transparent"
+              >
+                Sign in
+              </button>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <button
+                type="button"
+                className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-1.5 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5"
+              >
+                Sign up
+              </button>
+            </SignUpButton>
+          </Show>
         </div>
       </nav>
     </header>

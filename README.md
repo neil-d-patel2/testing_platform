@@ -113,6 +113,88 @@ export const Route = createFileRoute('/todos')({
 Schema lives in [`convex/schema.ts`](convex/schema.ts); functions in
 [`convex/todos.ts`](convex/todos.ts).
 
+## Authentication (Clerk + Google)
+
+Clerk issues the identity; Convex verifies the JWT. Wiring lives in
+[`src/routes/__root.tsx`](src/routes/__root.tsx) (`ClerkProvider` + a
+`fetchClerkAuth` server function that authenticates the SSR pass),
+[`src/integrations/convex/provider.tsx`](src/integrations/convex/provider.tsx)
+(`ConvexProviderWithClerk`), and
+[`convex/auth.config.ts`](convex/auth.config.ts) (which issuer Convex trusts).
+
+Set up via the [Clerk CLI](https://clerk.com/docs/cli) (`brew install clerk/stable/clerk`).
+The dev instance is already configured; the steps below are what it takes to
+reproduce on a fresh machine or a new Clerk app.
+
+### One-time setup
+
+```bash
+clerk auth login
+clerk init --app <app_id>   # detects TanStack Start, installs the SDK,
+                            # writes keys into .env.local
+```
+
+`clerk init` generates [`src/start.ts`](src/start.ts) (registers
+`clerkMiddleware()`, which is what makes server-side `auth()` work),
+[`src/routes/sign-in.$.tsx`](src/routes/sign-in.$.tsx),
+[`src/routes/sign-up.$.tsx`](src/routes/sign-up.$.tsx), and the `ClerkProvider`
+in `__root.tsx`.
+
+Two things it does **not** do, both required for Convex:
+
+1. **A JWT template named `convex`** — the name is the `applicationID` in
+   [`convex/auth.config.ts`](convex/auth.config.ts):
+   ```bash
+   clerk api /jwt_templates -X POST \
+     -d '{"name":"convex","claims":{"aud":"convex"},"lifetime":60}'
+   ```
+2. **The issuer domain on the Convex deployment** (not in `.env.local`):
+   ```bash
+   npx convex env set CLERK_JWT_ISSUER_DOMAIN https://<slug>.clerk.accounts.dev
+   ```
+
+Google sign-in is on by default using Clerk's shared dev credentials — verify
+with `clerk config pull` (look for `connection_oauth_google.enabled`). For
+production you supply your own Google OAuth client.
+
+Check the whole setup with `clerk doctor`.
+
+### Writing authenticated Convex functions
+
+Identity comes from the verified JWT via `ctx.auth.getUserIdentity()` — never
+from a user id passed in as an argument, since args are client-controlled.
+`identity.subject` is the stable Clerk user id.
+
+```ts
+const identity = await ctx.auth.getUserIdentity()
+if (!identity) throw new Error('Not signed in')
+// identity.subject === "user_2abc..."
+```
+
+See [`convex/users.ts`](convex/users.ts) for the minimal pattern and
+[`convex/todos.ts`](convex/todos.ts) for per-user data with ownership checks on
+every mutation.
+
+### Client-side
+
+`Show` replaced `SignedIn`/`SignedOut` in `@clerk/react` v6. It renders `null`
+while auth is resolving:
+
+```tsx
+import { Show, SignInButton, UserButton } from '@clerk/tanstack-react-start'
+;<Show when="signed-in">
+  <UserButton />
+</Show>
+<Show when="signed-out">
+  <SignInButton mode="modal" />
+</Show>
+```
+
+Clerk's own components are themed to match shadcn via
+`<ClerkProvider appearance={{ theme: shadcn }}>` plus
+`@import '@clerk/ui/themes/shadcn.css'` in
+[`src/styles.css`](src/styles.css).
+
 ## Shadcn
 
 Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
