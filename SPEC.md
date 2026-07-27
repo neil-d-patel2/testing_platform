@@ -164,7 +164,7 @@ the signed-in branch renders nothing.
 ## Test-taking UI
 
 Dark, focused, distraction-free — it should feel like the real thing. Reuse the
-existing `.liquid-glass` treatment and Instrument Serif headings so it matches
+existing `.liquid-glass` treatment and `font-display` headings so it matches
 the landing page.
 
 - Timer top-right. Turns amber under 5 minutes, red under 1. No flashing.

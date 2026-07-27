@@ -16,7 +16,9 @@ export default function Navbar() {
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center gap-2">
             <GraduationCap size={24} className="text-white" />
-            <span className="text-lg font-semibold text-white">TestPro</span>
+            <span className="font-display text-lg font-bold tracking-tight text-white">
+              TestPro
+            </span>
           </Link>
 
           <div className="hidden items-center gap-8 md:flex">

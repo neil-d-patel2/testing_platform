@@ -14,10 +14,7 @@ function LandingPage() {
       <Navbar />
 
       <main className="relative z-10 flex flex-1 -translate-y-[20%] flex-col items-center justify-center px-6 py-12 text-center">
-        <h1
-          className="mb-8 whitespace-nowrap text-5xl tracking-tight text-white md:text-6xl lg:text-7xl"
-          style={{ fontFamily: "'Instrument Serif', serif" }}
-        >
+        <h1 className="mb-8 font-display whitespace-nowrap text-5xl font-semibold tracking-tight text-white md:text-6xl lg:text-7xl">
           Practice like it's test day
         </h1>
 

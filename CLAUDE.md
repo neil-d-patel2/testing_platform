@@ -97,9 +97,13 @@ Python or `rg -a` when inspecting SSR output.
   `<ClerkProvider appearance={{ theme: shadcn }}>` plus
   `@import '@clerk/ui/themes/shadcn.css'` in `src/styles.css`
 - The landing page's "liquid glass" panels come from the `.liquid-glass` class in
-  `src/styles.css` (backdrop blur + inset highlight). Headings use Instrument
-  Serif, imported from Google Fonts at the top of `src/styles.css`. The
-  scaffold's `Header`/`Footer`/`src/routes/demo/` chrome has been deleted.
+  `src/styles.css` (backdrop blur + inset highlight). The scaffold's
+  `Header`/`Footer`/`src/routes/demo/` chrome has been deleted.
+- **Type: Inter for everything, Plus Jakarta Sans for display.** Both are
+  `@theme` tokens in `src/styles.css` — `font-sans` (already on `<body>`, so
+  it's the default) and `font-display`. Use the `font-display` utility on
+  headings and the wordmark; don't reintroduce inline `style={{ fontFamily }}`,
+  which is what these tokens replaced.
 
 ## Deployment
 

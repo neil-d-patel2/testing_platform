@@ -49,19 +49,16 @@ function TestsPage() {
       <Navbar />
 
       <main className="relative z-10 mx-auto w-full max-w-4xl px-6 py-12">
-        <h1
-          className="text-4xl tracking-tight text-white md:text-5xl"
-          style={{ fontFamily: "'Instrument Serif', serif" }}
-        >
+        <h1 className="font-display text-4xl font-semibold tracking-tight text-white md:text-5xl">
           Practice tests
         </h1>
-        <p className="mt-3 text-sm text-white/60">
+        <p className="mt-3 text-sm text-white">
           Pick a test to begin. Each module is timed separately, and the timer
           keeps running if you close the tab.
         </p>
 
         {tests.length === 0 ? (
-          <p className="liquid-glass mt-10 rounded-2xl px-6 py-10 text-center text-sm text-white/60">
+          <p className="liquid-glass mt-10 rounded-2xl px-6 py-10 text-center text-sm text-white">
             No tests have been published yet.
           </p>
         ) : (
@@ -71,15 +68,15 @@ function TestsPage() {
                 key={test.slug}
                 className="liquid-glass rounded-2xl px-6 py-5 transition-colors hover:bg-white/5"
               >
-                <h2 className="text-lg font-medium text-white">{test.title}</h2>
+                <h2 className="font-display text-lg font-semibold tracking-tight text-white">
+                  {test.title}
+                </h2>
 
                 {test.description ? (
-                  <p className="mt-1 text-sm text-white/60">
-                    {test.description}
-                  </p>
+                  <p className="mt-1 text-sm text-white">{test.description}</p>
                 ) : null}
 
-                <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-white/50">
+                <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-white">
                   <span className="flex items-center gap-1.5">
                     <FileText size={14} />
                     {test.moduleCount}{' '}
