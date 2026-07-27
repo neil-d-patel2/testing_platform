@@ -99,6 +99,10 @@ Python or `rg -a` when inspecting SSR output.
 - The landing page's "liquid glass" panels come from the `.liquid-glass` class in
   `src/styles.css` (backdrop blur + inset highlight). The scaffold's
   `Header`/`Footer`/`src/routes/demo/` chrome has been deleted.
+- **The test runner is light, the rest of the app is dark.** `/tests/$slug` is
+  deliberately white background / black text — it's a reading surface, and the
+  cinematic dark treatment fights an hour of passage reading. Don't "unify" it
+  with the landing page.
 - **Type: Inter for everything, Plus Jakarta Sans for display.** Both are
   `@theme` tokens in `src/styles.css` — `font-sans` (already on `<body>`, so
   it's the default) and `font-display`. Use the `font-display` utility on

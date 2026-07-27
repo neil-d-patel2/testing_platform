@@ -144,6 +144,22 @@ body {
 }
 
 /*
+ * Vestibular safety: honour the OS "reduce motion" setting globally rather than
+ * per-component, so a transition added later can't silently opt out of it.
+ * Near-zero rather than `none` keeps transitionend handlers firing.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/*
  * Liquid glass: a near-transparent luminosity-blended fill over a blur, with
  * the visible "edge" drawn by the ::before below rather than a real border —
  * a plain border can't fade along its length the way this gradient does.
