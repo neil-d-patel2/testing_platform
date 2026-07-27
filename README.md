@@ -48,14 +48,35 @@ Nitro detects Vercel from the CI environment and emits Build Output API v3 into
 `.vercel/output` — no adapter config needed. `vercel.json` pins the build and
 install commands so Vercel doesn't misdetect the project as a plain Vite app.
 
-1. Import the repo in Vercel.
-2. Set the environment variables from your **production** Convex deployment:
-   - `VITE_CONVEX_URL`
-   - `CONVEX_DEPLOY_KEY` (from the Convex dashboard)
-3. Deploy.
+Already set up: Vercel project `neil-d-patel2s-projects/testing_platform`, with
+the GitHub repo connected — **`git push` triggers a deploy**. `vercel deploy
+--prod` deploys the working tree directly.
 
-To push Convex functions as part of the Vercel build, change the build command
-to `npx convex deploy --cmd 'pnpm build'`.
+These are set as Vercel environment variables (Production + Preview):
+
+- `VITE_CONVEX_URL`
+- `VITE_CLERK_PUBLISHABLE_KEY`
+- `CLERK_SECRET_KEY`
+
+`VITE_`-prefixed values are inlined into the client bundle **at build time**, so
+changing one requires a redeploy, not just a restart. They are also public by
+definition — never put a secret behind a `VITE_` prefix.
+
+### Currently deployed with dev credentials
+
+The live site points at the Convex **dev** deployment and the Clerk **dev**
+instance, so it shares a database with your localhost and inherits Clerk's
+100-user dev cap, dev banner, and shared Google OAuth credentials.
+
+To move to real production:
+
+1. Create a Convex prod deployment; set `CLERK_JWT_ISSUER_DOMAIN` on it too, and
+   recreate the `convex` JWT template on the Clerk production instance.
+2. Create a Clerk production instance — needs a custom domain (DNS records) and
+   your own Google Cloud OAuth client.
+3. Swap the Vercel env vars to the production values.
+4. To push Convex functions during the Vercel build, set `CONVEX_DEPLOY_KEY` and
+   change the build command to `npx convex deploy --cmd 'pnpm build'`.
 
 ## Styling
 

@@ -13,8 +13,6 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import { ReactQueryDevtoolsPanel } from '@tanstack/react-query-devtools'
 import type { QueryClient } from '@tanstack/react-query'
 import type { ConvexQueryClient } from '@convex-dev/react-query'
-import Footer from '../components/Footer'
-import Header from '../components/Header'
 import { Toaster } from '../components/ui/sonner'
 
 import ConvexProvider from '../integrations/convex/provider'
@@ -63,7 +61,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'TanStack Start Starter',
+        title: 'Asme',
       },
     ],
     links: [
@@ -85,15 +83,13 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
-      <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
+      <body className="bg-black font-sans antialiased">
         <ClerkProvider appearance={{ theme: shadcn }}>
           <ConvexProvider
             convexQueryClient={convexQueryClient}
             queryClient={queryClient}
           >
-            <Header />
             {children}
-            <Footer />
             <Toaster />
             <TanStackDevtools
               config={{
