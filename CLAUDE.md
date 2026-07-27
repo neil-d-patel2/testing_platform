@@ -77,6 +77,11 @@ client can post any `_id`. See `convex/todos.ts`.
 **Generated — never hand-edit:** `src/routeTree.gen.ts`, `convex/_generated/**`.
 Adding a route file? `pnpm generate-routes` (the dev server also does it).
 
+**No hyphens in `convex/` filenames.** Every path under `convex/` is a module
+path, and Convex rejects the push with `is not a valid path to a Convex module`
+— alphanumerics, underscores, and periods only. Test content files are
+`sampleTest.ts`, not `sample-test.ts`, for this reason alone.
+
 **Schema changes on a populated table fail the push.** Adding a required field
 rejects existing rows. Clear the table in the Convex dashboard or make the field
 optional and backfill.

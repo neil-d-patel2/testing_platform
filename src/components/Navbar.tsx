@@ -4,32 +4,34 @@ import {
   SignUpButton,
   UserButton,
 } from '@clerk/tanstack-react-start'
+import { Link } from '@tanstack/react-router'
 import { GraduationCap } from 'lucide-react'
 
 import { Button } from '#/components/ui/button.tsx'
-
-const NAV_LINKS = ['Practice Tests', 'How It Works']
 
 export default function Navbar() {
   return (
     <nav className="relative z-20 py-6 pl-6 pr-6">
       <div className="liquid-glass mx-auto flex max-w-5xl items-center justify-between rounded-full px-6 py-3">
         <div className="flex items-center gap-8">
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <GraduationCap size={24} className="text-white" />
             <span className="text-lg font-semibold text-white">TestPro</span>
-          </div>
+          </Link>
 
           <div className="hidden items-center gap-8 md:flex">
-            {NAV_LINKS.map((label) => (
-              <button
-                key={label}
-                type="button"
-                className="text-sm font-medium text-white/80 transition-colors hover:text-white"
-              >
-                {label}
-              </button>
-            ))}
+            {/*
+              Shown to everyone. Signed-out visitors get bounced to sign-in by
+              the route's guard, which is the intended way to discover that
+              tests need an account.
+            */}
+            <Link
+              to="/tests"
+              className="text-sm font-medium text-white/80 transition-colors hover:text-white"
+              activeProps={{ className: 'text-white' }}
+            >
+              Practice Tests
+            </Link>
           </div>
         </div>
 

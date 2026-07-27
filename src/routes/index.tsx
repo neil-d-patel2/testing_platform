@@ -1,5 +1,5 @@
 import { Show, SignUpButton } from '@clerk/tanstack-react-start'
-import { createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 
 import BackgroundVideo from '#/components/BackgroundVideo.tsx'
 import Navbar from '#/components/Navbar.tsx'
@@ -41,6 +41,15 @@ function LandingPage() {
                   Start practicing
                 </button>
               </SignUpButton>
+            </Show>
+
+            <Show when="signed-in">
+              <Link
+                to="/tests"
+                className="liquid-glass rounded-full px-8 py-3 text-sm font-medium text-white transition-colors hover:bg-white/5"
+              >
+                View your tests
+              </Link>
             </Show>
           </div>
         </div>

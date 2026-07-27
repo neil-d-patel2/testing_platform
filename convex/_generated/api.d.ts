@@ -8,6 +8,10 @@
  * @module
  */
 
+import type * as content_index from "../content/index.js";
+import type * as content_tests_sampleTest from "../content/tests/sampleTest.js";
+import type * as content_types from "../content/types.js";
+import type * as tests from "../tests.js";
 import type * as todos from "../todos.js";
 import type * as users from "../users.js";
 
@@ -18,6 +22,10 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  "content/index": typeof content_index;
+  "content/tests/sampleTest": typeof content_tests_sampleTest;
+  "content/types": typeof content_types;
+  tests: typeof tests;
   todos: typeof todos;
   users: typeof users;
 }>;

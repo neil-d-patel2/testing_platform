@@ -179,12 +179,14 @@ the landing page.
 Ship these as separate reviewable steps, each ending green on
 `pnpm typecheck && pnpm lint && pnpm check && pnpm build`:
 
-1. **Content layer** — `convex/content/` types, one real test from the tutor,
-   and the registry. No UI.
+1. ~~**Content layer**~~ — **done.** `convex/content/{types,index}.ts` plus a
+   placeholder test in `convex/content/tests/`. Still needs the tutor's real
+   tests transcribed in place of the placeholder.
 2. **Schema + Convex functions** — attempts, answers, start/save/advance/submit,
    the answer-stripping read query, and the post-submit review query. This is
-   where the security rules land.
-3. **`/tests` list + pre-test screen.**
+   where the security rules land. (`convex/tests.ts` currently has only `list`.)
+3. **`/tests` list + pre-test screen** — the list is **done** and auth-gated;
+   the pre-test screen and `/tests/$slug` are not built.
 4. **The attempt runner** — the timer, navigation, flags, autosave, resume.
 5. **The review screen.**
 6. **Cleanup** — delete `todos` from the schema, `convex/todos.ts`, and their
