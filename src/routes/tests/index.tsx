@@ -1,6 +1,6 @@
 import { convexQuery } from '@convex-dev/react-query'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { Link, createFileRoute, redirect } from '@tanstack/react-router'
 import { Clock, FileText, ListChecks } from 'lucide-react'
 
 import Navbar from '#/components/Navbar.tsx'
@@ -64,33 +64,38 @@ function TestsPage() {
         ) : (
           <ul className="mt-10 space-y-4">
             {tests.map((test) => (
-              <li
-                key={test.slug}
-                className="liquid-glass rounded-2xl px-6 py-5 transition-colors hover:bg-white/5"
-              >
-                <h2 className="font-display text-lg font-semibold tracking-tight text-white">
-                  {test.title}
-                </h2>
+              <li key={test.slug}>
+                <Link
+                  to="/tests/$slug"
+                  params={{ slug: test.slug }}
+                  className="liquid-glass block rounded-2xl px-6 py-5 transition-colors hover:bg-white/5"
+                >
+                  <h2 className="font-display text-lg font-semibold tracking-tight text-white">
+                    {test.title}
+                  </h2>
 
-                {test.description ? (
-                  <p className="mt-1 text-sm text-white">{test.description}</p>
-                ) : null}
+                  {test.description ? (
+                    <p className="mt-1 text-sm text-white">
+                      {test.description}
+                    </p>
+                  ) : null}
 
-                <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-white">
-                  <span className="flex items-center gap-1.5">
-                    <FileText size={14} />
-                    {test.moduleCount}{' '}
-                    {test.moduleCount === 1 ? 'module' : 'modules'}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <ListChecks size={14} />
-                    {test.questionCount} questions
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Clock size={14} />
-                    {formatDuration(test.totalTimeSeconds)}
-                  </span>
-                </div>
+                  <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-white">
+                    <span className="flex items-center gap-1.5">
+                      <FileText size={14} />
+                      {test.moduleCount}{' '}
+                      {test.moduleCount === 1 ? 'module' : 'modules'}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <ListChecks size={14} />
+                      {test.questionCount} questions
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <Clock size={14} />
+                      {formatDuration(test.totalTimeSeconds)}
+                    </span>
+                  </div>
+                </Link>
               </li>
             ))}
           </ul>

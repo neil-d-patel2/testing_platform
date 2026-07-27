@@ -1,6 +1,6 @@
 import { v } from 'convex/values'
 import { query } from './_generated/server'
-import { listTestSummaries } from './content'
+import { getPublicTest, listTestSummaries } from './content'
 
 /**
  * The tests a student can take.
@@ -36,5 +36,28 @@ export const list = query({
     }
 
     return listTestSummaries()
+  },
+})
+
+/**
+ * One test's full question content, with the answer key removed.
+ *
+ * This is the query that actually carries question text to the browser, so the
+ * stripping in `getPublicTest` is the thing standing between a student and the
+ * answers. It is deliberately the only public path to question content.
+ *
+ * No return validator: the question shape is a discriminated union with a
+ * dozen optional fields, and duplicating it here as a `v.union` would be a
+ * second definition to keep in sync — `PublicTest` already types it.
+ */
+export const get = query({
+  args: { slug: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) {
+      return null
+    }
+
+    return getPublicTest(args.slug) ?? null
   },
 })

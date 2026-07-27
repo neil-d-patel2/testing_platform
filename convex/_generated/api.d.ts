@@ -8,8 +8,13 @@
  * @module
  */
 
+import type * as attempts from "../attempts.js";
 import type * as content_index from "../content/index.js";
-import type * as content_tests_sampleTest from "../content/tests/sampleTest.js";
+import type * as content_tests_satPracticeTest1_index from "../content/tests/satPracticeTest1/index.js";
+import type * as content_tests_satPracticeTest1_math1 from "../content/tests/satPracticeTest1/math1.js";
+import type * as content_tests_satPracticeTest1_math2 from "../content/tests/satPracticeTest1/math2.js";
+import type * as content_tests_satPracticeTest1_readingWriting1 from "../content/tests/satPracticeTest1/readingWriting1.js";
+import type * as content_tests_satPracticeTest1_readingWriting2 from "../content/tests/satPracticeTest1/readingWriting2.js";
 import type * as content_types from "../content/types.js";
 import type * as tests from "../tests.js";
 import type * as todos from "../todos.js";
@@ -22,8 +27,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  attempts: typeof attempts;
   "content/index": typeof content_index;
-  "content/tests/sampleTest": typeof content_tests_sampleTest;
+  "content/tests/satPracticeTest1/index": typeof content_tests_satPracticeTest1_index;
+  "content/tests/satPracticeTest1/math1": typeof content_tests_satPracticeTest1_math1;
+  "content/tests/satPracticeTest1/math2": typeof content_tests_satPracticeTest1_math2;
+  "content/tests/satPracticeTest1/readingWriting1": typeof content_tests_satPracticeTest1_readingWriting1;
+  "content/tests/satPracticeTest1/readingWriting2": typeof content_tests_satPracticeTest1_readingWriting2;
   "content/types": typeof content_types;
   tests: typeof tests;
   todos: typeof todos;

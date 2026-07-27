@@ -1,15 +1,21 @@
-import { sampleTest } from './tests/sampleTest'
-import type { PublicQuestion, Question, Test, TestSummary } from './types'
+import { satPracticeTest1 } from './tests/satPracticeTest1'
+import type {
+  PublicModule,
+  PublicTest,
+  Question,
+  Test,
+  TestSummary,
+} from './types'
 
 /**
  * Every test the platform serves. Adding a test is a code change: write the
- * file under `./tests/`, then register it here.
+ * files under `./tests/`, then register it here.
  *
  * Slugs must be unique — `assertUniqueSlugs` below fails the deploy if not,
  * since a duplicate would silently shadow a test that students may already
  * have attempts against.
  */
-const ALL_TESTS: Array<Test> = [sampleTest]
+const ALL_TESTS: Array<Test> = [satPracticeTest1]
 
 function assertUniqueSlugs(tests: Array<Test>) {
   const seen = new Set<string>()
@@ -21,7 +27,28 @@ function assertUniqueSlugs(tests: Array<Test>) {
   }
 }
 
+/**
+ * Question ids are the key stored answers point at, so a collision inside a
+ * test would make two questions share a student's response.
+ */
+function assertUniqueQuestionIds(tests: Array<Test>) {
+  for (const test of tests) {
+    const seen = new Set<string>()
+    for (const module of test.modules) {
+      for (const question of module.questions) {
+        if (seen.has(question.id)) {
+          throw new Error(
+            `Duplicate question id "${question.id}" in test "${test.slug}"`,
+          )
+        }
+        seen.add(question.id)
+      }
+    }
+  }
+}
+
 assertUniqueSlugs(ALL_TESTS)
+assertUniqueQuestionIds(ALL_TESTS)
 
 const BY_SLUG = new Map(ALL_TESTS.map((test) => [test.slug, test]))
 
@@ -54,7 +81,7 @@ export function listTestSummaries(): Array<TestSummary> {
  * adding a new question type with a new answer field fails to compile here
  * instead of quietly leaking it.
  */
-export function stripAnswers(question: Question): PublicQuestion {
+export function stripAnswers(question: Question) {
   switch (question.type) {
     case 'multiple-choice': {
       const { correctAnswer: _c, explanation: _e, ...safe } = question
@@ -64,5 +91,27 @@ export function stripAnswers(question: Question): PublicQuestion {
       const { acceptedAnswers: _a, explanation: _e, ...safe } = question
       return safe
     }
+  }
+}
+
+function stripModule(module: Test['modules'][number]): PublicModule {
+  return {
+    id: module.id,
+    title: module.title,
+    timeLimitSeconds: module.timeLimitSeconds,
+    questions: module.questions.map(stripAnswers),
+  }
+}
+
+/** A whole test with every answer field removed. Safe to send to a student. */
+export function getPublicTest(slug: string): PublicTest | undefined {
+  const test = getTest(slug)
+  if (!test) return undefined
+
+  return {
+    slug: test.slug,
+    title: test.title,
+    description: test.description,
+    modules: test.modules.map(stripModule),
   }
 }

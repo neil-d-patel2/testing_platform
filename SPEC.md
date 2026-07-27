@@ -179,28 +179,44 @@ the landing page.
 Ship these as separate reviewable steps, each ending green on
 `pnpm typecheck && pnpm lint && pnpm check && pnpm build`:
 
-1. ~~**Content layer**~~ — **done.** `convex/content/{types,index}.ts` plus a
-   placeholder test in `convex/content/tests/`. Still needs the tutor's real
-   tests transcribed in place of the placeholder.
-2. **Schema + Convex functions** — attempts, answers, start/save/advance/submit,
-   the answer-stripping read query, and the post-submit review query. This is
-   where the security rules land. (`convex/tests.ts` currently has only `list`.)
-3. **`/tests` list + pre-test screen** — the list is **done** and auth-gated;
-   the pre-test screen and `/tests/$slug` are not built.
-4. **The attempt runner** — the timer, navigation, flags, autosave, resume.
-5. **The review screen.**
+1. ~~**Content layer**~~ — **done.** SAT Practice Test 1 is transcribed in
+   `convex/content/tests/satPracticeTest1/`: 98 questions across four modules.
+   **Missing its answer key** — see below.
+2. ~~**Schema + Convex functions**~~ — **mostly done.** `attempts` + `answers`
+   tables; `attempts.{start,getActive,saveAnswer,clearAnswer,submit}`;
+   `tests.get` serves the stripped test. Still missing: per-module advance and
+   the post-submit review query, both of which depend on timing and scoring.
+3. ~~**`/tests` list**~~ — **done** and auth-gated. No separate pre-test screen:
+   clicking a test goes straight into the runner.
+4. **The attempt runner** — **partly done.** `/tests/$slug` renders questions,
+   records answers, autosaves, and resumes. Still missing: the timer, per-module
+   locking (all four modules are freely navigable), and question flagging.
+5. **The review screen** — blocked on the answer key.
 6. **Cleanup** — delete `todos` from the schema, `convex/todos.ts`, and their
    README references once nothing depends on them.
 
+## Blocking: Practice Test 1 has no answer key
+
+The source document contained questions and choices only — no correct answers.
+`correctAnswer` and `acceptedAnswers` are therefore **optional** in the types,
+and every question in Practice Test 1 omits them. Consequences:
+
+- Nothing can be scored. `submit` marks the attempt finished and writes no score.
+- Scoring, when it lands, must treat a missing key as **"not gradable"**, never
+  as "wrong" — otherwise a keyless test silently reports 0/98.
+
+Eight questions also reference a figure the document marked "pending insertion"
+(a graph, five diagrams, two tables). They carry a `figureNote` and render a
+visible placeholder, so they're obviously un-answerable rather than quietly
+broken. Both gaps are filled by editing the content files — no schema change.
+
 ## Open questions for the tutor
 
-Answer these before step 1 — they change the data model:
-
-1. What shape are your tests actually in right now (Google Doc, PDF, Word,
-   spreadsheet)? That decides how much of step 1 is transcription.
-2. How many modules per test, and what time limit each?
-3. Any math grid-in questions, or is everything multiple choice?
-4. Should a student be able to retake a test, and if so does the old attempt
-   stay in the history?
-5. Do you want to see your students' results, or is this student-facing only?
+1. Where is the answer key for Practice Test 1, and the eight missing figures?
+2. Should a student be able to retake a test? Right now `start` returns the
+   existing attempt forever, so there is exactly one attempt per student per
+   test and no way to begin a fresh one.
+3. Once timing lands, should the four modules lock in order? They are currently
+   all freely navigable.
+4. Do you want to see your students' results, or is this student-facing only?
    (A tutor dashboard is real scope — out of the flow above.)

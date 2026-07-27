@@ -123,6 +123,14 @@ $400/yr subscription with the tutor's own tests. Tests are hard-coded into the
 repo by the tutor; students sign in, pick a test, and take it under a time
 limit. `SPEC.md` holds the build plan and is the brief to hand an agent.
 
-The landing page is built. The `todos` table and `convex/todos.ts` are leftover
-scaffold, kept for now only as the reference example for per-user ownership
-checks — delete both once the real attempt functions exist.
+SAT Practice Test 1 lives in `convex/content/tests/satPracticeTest1/` (98
+questions, four modules). It has **no answer key** — `correctAnswer` and
+`acceptedAnswers` are optional and every question omits them, so nothing is
+gradable yet. Scoring must treat a missing key as "not gradable", not "wrong".
+
+Test content is deliberately unreachable from `src/`: it is imported only by
+Convex functions, and `tests.get` runs it through `stripAnswers` before it
+reaches a browser. Never import `convex/content/` from `src/`.
+
+The `todos` table and `convex/todos.ts` are leftover scaffold, now superseded by
+`convex/attempts.ts` — safe to delete.
