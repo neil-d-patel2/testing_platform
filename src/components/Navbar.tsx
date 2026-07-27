@@ -4,11 +4,11 @@ import {
   SignUpButton,
   UserButton,
 } from '@clerk/tanstack-react-start'
-import { Globe } from 'lucide-react'
+import { GraduationCap } from 'lucide-react'
 
 import { Button } from '#/components/ui/button.tsx'
 
-const NAV_LINKS = ['Features', 'Pricing', 'About']
+const NAV_LINKS = ['Practice Tests', 'How It Works']
 
 export default function Navbar() {
   return (
@@ -16,8 +16,8 @@ export default function Navbar() {
       <div className="liquid-glass mx-auto flex max-w-5xl items-center justify-between rounded-full px-6 py-3">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-2">
-            <Globe size={24} className="text-white" />
-            <span className="text-lg font-semibold text-white">Asme</span>
+            <GraduationCap size={24} className="text-white" />
+            <span className="text-lg font-semibold text-white">TestPro</span>
           </div>
 
           <div className="hidden items-center gap-8 md:flex">

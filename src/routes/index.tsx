@@ -1,3 +1,4 @@
+import { Show, SignUpButton } from '@clerk/tanstack-react-start'
 import { createFileRoute } from '@tanstack/react-router'
 
 import BackgroundVideo from '#/components/BackgroundVideo.tsx'
@@ -17,22 +18,30 @@ function LandingPage() {
           className="mb-8 whitespace-nowrap text-5xl tracking-tight text-white md:text-6xl lg:text-7xl"
           style={{ fontFamily: "'Instrument Serif', serif" }}
         >
-          Built for the curious
+          Practice like it's test day
         </h1>
 
         <div className="w-full max-w-xl space-y-4">
           <p className="px-4 text-sm leading-relaxed text-white">
-            Stay updated with the latest news and insights. Subscribe to our
-            newsletter today and never miss out on exciting updates.
+            Full-length, timed SAT practice tests written by your tutor. Sign
+            in, pick a test, and get to work.
           </p>
 
-          <div className="flex justify-center">
-            <button
-              type="button"
-              className="liquid-glass rounded-full px-8 py-3 text-sm font-medium text-white transition-colors hover:bg-white/5"
-            >
-              Manifesto
-            </button>
+          {/*
+            `Show` renders null until Clerk resolves, so the min-height reserves
+            the button's row and keeps the hero from shifting when it appears.
+          */}
+          <div className="flex min-h-12 justify-center">
+            <Show when="signed-out">
+              <SignUpButton mode="modal">
+                <button
+                  type="button"
+                  className="liquid-glass rounded-full px-8 py-3 text-sm font-medium text-white transition-colors hover:bg-white/5"
+                >
+                  Start practicing
+                </button>
+              </SignUpButton>
+            </Show>
           </div>
         </div>
       </main>

@@ -1,7 +1,10 @@
-# testing-platform application
+# TestPro
 
+A self-hosted SAT practice-test platform. Tutors hard-code their own tests into
+the repo; students sign in, pick a test, and take it under a time limit. See
+[`SPEC.md`](SPEC.md) for what's being built.
 
-TanStack Start · Convex · Tailwind CSS v4 · shadcn/ui · deployed on Vercel.
+TanStack Start · Convex · Clerk · Tailwind CSS v4 · shadcn/ui · deployed on Vercel.
 
 | Layer      | Choice                                                      |
 | ---------- | ----------------------------------------------------------- |
@@ -87,10 +90,9 @@ This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
 
 If you prefer not to use Tailwind CSS:
 
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Remove `@tailwindcss/vite` and `tailwindcss` from `package.json`
+1. Replace the Tailwind import in `src/styles.css` with your own styles
+2. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
+3. Remove `@tailwindcss/vite` and `tailwindcss` from `package.json`
 
 ## Linting & Formatting
 
@@ -113,7 +115,7 @@ loaders, SSR dehydration, and devtools. The clients are created per-request in
 Two ways to read data — both stay reactive:
 
 ```tsx
-// 1. Plain Convex hook (see src/routes/demo/convex.tsx)
+// 1. Plain Convex hook
 import { useQuery } from 'convex/react'
 const todos = useQuery(api.todos.list)
 
@@ -378,10 +380,6 @@ function PeopleComponent() {
 ```
 
 Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
 
 # Learn More
 

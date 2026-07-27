@@ -91,10 +91,10 @@ Python or `rg -a` when inspecting SSR output.
 - Clerk's own components are themed via
   `<ClerkProvider appearance={{ theme: shadcn }}>` plus
   `@import '@clerk/ui/themes/shadcn.css'` in `src/styles.css`
-- The scaffold's own chrome (`Header`, `Footer`, `src/routes/demo/`) uses custom
-  CSS vars (`--sea-ink`, `--chip-bg`, `--lagoon`) defined in `src/styles.css`.
-  These are **starter styling, slated for deletion** — don't build new UI on
-  them; use Tailwind + shadcn tokens instead.
+- The landing page's "liquid glass" panels come from the `.liquid-glass` class in
+  `src/styles.css` (backdrop blur + inset highlight). Headings use Instrument
+  Serif, imported from Google Fonts at the top of `src/styles.css`. The
+  scaffold's `Header`/`Footer`/`src/routes/demo/` chrome has been deleted.
 
 ## Deployment
 
@@ -107,9 +107,13 @@ Clerk dev caps at 100 users and shows a dev banner. Going to real production
 needs a Convex prod deployment plus a Clerk production instance (which requires
 a custom domain and your own Google OAuth client).
 
-## Pending
+## What this app is
 
-The demo UI (`src/routes/demo/`, `Header`, `Footer`, the todos example) is meant
-to be **replaced by a landing page**, spec'd but not yet built: full-screen
-looping background video, "liquid glass" panels, Instrument Serif heading, dark
-cinematic aesthetic. Ask the user for the spec before removing the demo files.
+**TestPro** — a self-hosted SAT practice-test platform, built to replace a
+$400/yr subscription with the tutor's own tests. Tests are hard-coded into the
+repo by the tutor; students sign in, pick a test, and take it under a time
+limit. `SPEC.md` holds the build plan and is the brief to hand an agent.
+
+The landing page is built. The `todos` table and `convex/todos.ts` are leftover
+scaffold, kept for now only as the reference example for per-user ownership
+checks — delete both once the real attempt functions exist.

@@ -61,7 +61,12 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'Asme',
+        title: 'TestPro — SAT Practice Tests',
+      },
+      {
+        name: 'description',
+        content:
+          'Full-length, timed SAT practice tests. Sign in, pick a test, and get to work.',
       },
     ],
     links: [
