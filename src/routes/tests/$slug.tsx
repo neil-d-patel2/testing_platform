@@ -34,12 +34,21 @@ import type { Id } from '../../../convex/_generated/dataModel'
 
 export const Route = createFileRoute('/tests/$slug')({
   /*
-   * `?retake=1` arrives from the Retake button on the tests list. It reopens
-   * the instructions screen over a finished attempt so the student re-picks
-   * their time; without it, a submitted attempt renders read-only.
+   * `?retake` arrives from the Retake button on the tests list and from the
+   * score report. It reopens the instructions screen over a finished attempt
+   * so the student re-picks their time; without it, a finished attempt shows
+   * the submitted screen.
+   *
+   * The router parses search values as JSON, so `?retake=true` arrives as a
+   * boolean and `?retake=1` as a number. Both are accepted, along with their
+   * quoted forms, so a hand-typed URL does what it looks like it does.
    */
-  validateSearch: (search: Record<string, unknown>): { retake?: boolean } =>
-    search.retake === '1' || search.retake === true ? { retake: true } : {},
+  validateSearch: (search: Record<string, unknown>): { retake?: boolean } => {
+    const value = search.retake
+    const on =
+      value === true || value === 1 || value === 'true' || value === '1'
+    return on ? { retake: true } : {}
+  },
   beforeLoad: ({ context }) => {
     if (!context.userId) {
       throw redirect({ to: '/sign-in/$', params: { _splat: '' } })
