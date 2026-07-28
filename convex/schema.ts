@@ -10,9 +10,11 @@ export default defineSchema({
   }).index('by_user', ['userId']),
 
   /**
-   * One student's run at one test. Timing is not enforced yet — `startedAt` is
-   * recorded so the per-module deadlines in `SPEC.md` can be layered on later
-   * without a migration.
+   * One student's run at one test.
+   *
+   * Timing is server-authoritative: `moduleExpiresAt` is written when a module
+   * begins and is the only thing that decides whether an answer is still
+   * accepted. The client's countdown is derived from it, never the reverse.
    */
   attempts: defineTable({
     // Clerk user id (`identity.subject`). Derived from the JWT, never an arg.
@@ -28,6 +30,35 @@ export default defineSchema({
     userEmail: v.optional(v.string()),
     testSlug: v.string(),
     status: v.union(v.literal('in_progress'), v.literal('submitted')),
+    /*
+     * The accommodation the student picked on the instructions screen, which
+     * scales every module's time limit. Chosen once, at start — changing it
+     * mid-test would mean recomputing a deadline the student has already been
+     * counting down against.
+     */
+    timeOption: v.optional(
+      v.union(
+        v.literal('standard'),
+        v.literal('extended50'),
+        v.literal('extended100'),
+      ),
+    ),
+    /*
+     * Index into the test's `modules`. Advances one way only — a finished
+     * module is never reopened.
+     */
+    currentModuleIndex: v.optional(v.number()),
+    /*
+     * When the current module's time runs out, in ms epoch. A scheduled
+     * mutation fires at this instant and advances (or submits) even if the
+     * browser is closed, so a student cannot bank time by walking away.
+     */
+    moduleExpiresAt: v.optional(v.number()),
+    /*
+     * All four are optional because attempts created before timing existed
+     * have none of them. Those rows read as "untimed": no countdown, no
+     * auto-advance — degraded, but not broken.
+     */
     startedAt: v.number(),
     submittedAt: v.optional(v.number()),
   })

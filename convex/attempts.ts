@@ -1,8 +1,28 @@
 import { v } from 'convex/values'
-import { mutation, query } from './_generated/server'
+import { internal } from './_generated/api'
+import { internalMutation, mutation, query } from './_generated/server'
 import { getTest } from './content'
-import type { Id } from './_generated/dataModel'
+import { asTimeOption, moduleSeconds } from './timing'
+import type { Doc, Id } from './_generated/dataModel'
 import type { MutationCtx, QueryCtx } from './_generated/server'
+import type { Test } from './content/types'
+import type { TimeOption } from './timing'
+
+/** Argument/field validator for the time accommodation. */
+const timeOptionValidator = v.union(
+  v.literal('standard'),
+  v.literal('extended50'),
+  v.literal('extended100'),
+)
+
+/**
+ * Slack allowed past a module deadline before a write is refused.
+ *
+ * A student who clicks a choice with half a second left deserves to have it
+ * counted; the request still has to cross the network. Small enough that it
+ * cannot be used to work past the timer in any meaningful way.
+ */
+const DEADLINE_GRACE_MS = 2_000
 
 /** Throws unless a Clerk identity is attached to the request. */
 async function requireUserId(ctx: QueryCtx | MutationCtx) {
@@ -30,6 +50,112 @@ async function requireOwnedAttempt(ctx: MutationCtx, id: Id<'attempts'>) {
   }
 
   return attempt
+}
+
+/**
+ * When a module that starts at `from` runs out, for this student's
+ * accommodation.
+ */
+function deadlineFor(
+  test: Test,
+  moduleIndex: number,
+  option: TimeOption,
+  from: number,
+) {
+  const base = test.modules[moduleIndex].timeLimitSeconds
+  return from + moduleSeconds(base, option) * 1000
+}
+
+/**
+ * Books the wake-up that ends a module.
+ *
+ * This is what makes the timer real rather than decorative: it fires whether
+ * or not a browser is still open, so closing the tab on a running module
+ * doesn't pause it. Scheduling is fire-and-forget — the job re-checks the
+ * attempt when it runs and no-ops if the module has already moved on, which is
+ * the normal case when a student finishes early.
+ */
+async function scheduleExpiry(
+  ctx: MutationCtx,
+  attemptId: Id<'attempts'>,
+  moduleIndex: number,
+  expiresAt: number,
+) {
+  await ctx.scheduler.runAt(expiresAt, internal.attempts.expireModule, {
+    attemptId,
+    moduleIndex,
+  })
+}
+
+/** A question and the index of the module holding it. Throws if unknown. */
+function locateQuestion(test: Test, questionId: string) {
+  for (let moduleIndex = 0; moduleIndex < test.modules.length; moduleIndex++) {
+    const question = test.modules[moduleIndex].questions.find(
+      (q) => q.id === questionId,
+    )
+    if (question) return { question, moduleIndex }
+  }
+  throw new Error(`Unknown question: ${questionId}`)
+}
+
+/**
+ * Refuses a write aimed at a module the student is not currently in, or one
+ * whose time has run out.
+ *
+ * This is where the timer stops being advisory. A countdown in React can be
+ * paused with devtools, and the module a request claims to be for is just a
+ * question id — so both have to be re-derived and checked here.
+ *
+ * Attempts predating timing carry no `moduleExpiresAt`; those stay writable,
+ * since retroactively locking someone out of a test they started under the old
+ * rules would lose their work.
+ */
+function requireOpenModule(attempt: Doc<'attempts'>, moduleIndex: number) {
+  if ((attempt.currentModuleIndex ?? 0) !== moduleIndex) {
+    throw new Error('That section is closed')
+  }
+
+  const expiresAt = attempt.moduleExpiresAt
+  if (expiresAt !== undefined && Date.now() > expiresAt + DEADLINE_GRACE_MS) {
+    throw new Error('Time is up for this section')
+  }
+}
+
+/**
+ * Moves the attempt onto the next module, or submits it if there isn't one.
+ *
+ * The single place a module boundary is crossed — reached both when a student
+ * finishes early and when their time runs out, so the two paths can't drift.
+ * `from` is when the new module starts counting.
+ */
+async function advanceOrSubmit(
+  ctx: MutationCtx,
+  attempt: Doc<'attempts'>,
+  from: number,
+) {
+  const test = getTest(attempt.testSlug)
+  const nextIndex = (attempt.currentModuleIndex ?? 0) + 1
+
+  // An unknown slug can only mean content was deleted out from under a live
+  // attempt. Submitting is the safe end state: answers are kept, and the
+  // student isn't stranded on a module that no longer exists.
+  if (!test || nextIndex >= test.modules.length) {
+    await ctx.db.patch(attempt._id, {
+      status: 'submitted',
+      submittedAt: from,
+      moduleExpiresAt: undefined,
+    })
+    return
+  }
+
+  const option = asTimeOption(attempt.timeOption)
+  const expiresAt = deadlineFor(test, nextIndex, option, from)
+
+  await ctx.db.patch(attempt._id, {
+    currentModuleIndex: nextIndex,
+    moduleExpiresAt: expiresAt,
+  })
+  await scheduleExpiry(ctx, attempt._id, nextIndex, expiresAt)
 }
 
 /**
@@ -69,6 +195,15 @@ export const getActive = query({
       status: attempt.status,
       startedAt: attempt.startedAt,
       submittedAt: attempt.submittedAt,
+      timeOption: attempt.timeOption,
+      /*
+       * Timing is handed over raw, as absolute instants. Deliberately not a
+       * "seconds remaining" number: this is a query, and a query is not rerun
+       * because time passed, so any countdown computed here would be frozen at
+       * whatever the cache last saw. The client ticks against these.
+       */
+      currentModuleIndex: attempt.currentModuleIndex ?? 0,
+      moduleExpiresAt: attempt.moduleExpiresAt,
       // Keyed by question id so the client can look up a response directly.
       answers: Object.fromEntries(answers.map((a) => [a.questionId, a.value])),
     }
@@ -78,11 +213,15 @@ export const getActive = query({
 /**
  * Starts an attempt, or returns the existing one.
  *
- * Idempotent on purpose: the runner calls this on mount, and a double-click or
- * a Strict Mode double-render must not create two attempts for the same test.
+ * Idempotent on purpose: a double-click on "Begin" must not create two
+ * attempts, and must not restart the clock on one already running.
+ *
+ * `timeOption` is the accommodation chosen on the instructions screen. It is
+ * only honoured when an attempt is actually created — re-sending it against a
+ * live attempt would hand a student a fresh, longer deadline mid-module.
  */
 export const start = mutation({
-  args: { testSlug: v.string() },
+  args: { testSlug: v.string(), timeOption: timeOptionValidator },
   returns: v.id('attempts'),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
@@ -92,7 +231,8 @@ export const start = mutation({
 
     // Reject slugs that aren't real tests, so a client can't create attempts
     // against arbitrary strings.
-    if (!getTest(args.testSlug)) {
+    const test = getTest(args.testSlug)
+    if (!test) {
       throw new Error(`Unknown test: ${args.testSlug}`)
     }
 
@@ -113,14 +253,23 @@ export const start = mutation({
       return existing._id
     }
 
-    return await ctx.db.insert('attempts', {
+    const startedAt = Date.now()
+    const expiresAt = deadlineFor(test, 0, args.timeOption, startedAt)
+
+    const attemptId = await ctx.db.insert('attempts', {
       userId: identity.subject,
       userName: identity.name,
       userEmail: identity.email,
       testSlug: args.testSlug,
       status: 'in_progress',
-      startedAt: Date.now(),
+      timeOption: args.timeOption,
+      currentModuleIndex: 0,
+      moduleExpiresAt: expiresAt,
+      startedAt,
     })
+    await scheduleExpiry(ctx, attemptId, 0, expiresAt)
+
+    return attemptId
   },
 })
 
@@ -132,7 +281,7 @@ export const start = mutation({
  * they may not have looked at yet.
  */
 export const retake = mutation({
-  args: { testSlug: v.string() },
+  args: { testSlug: v.string(), timeOption: timeOptionValidator },
   returns: v.id('attempts'),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
@@ -140,7 +289,8 @@ export const retake = mutation({
       throw new Error('Not signed in')
     }
 
-    if (!getTest(args.testSlug)) {
+    const test = getTest(args.testSlug)
+    if (!test) {
       throw new Error(`Unknown test: ${args.testSlug}`)
     }
 
@@ -158,14 +308,23 @@ export const retake = mutation({
       return latest._id
     }
 
-    return await ctx.db.insert('attempts', {
+    const startedAt = Date.now()
+    const expiresAt = deadlineFor(test, 0, args.timeOption, startedAt)
+
+    const attemptId = await ctx.db.insert('attempts', {
       userId: identity.subject,
       userName: identity.name,
       userEmail: identity.email,
       testSlug: args.testSlug,
       status: 'in_progress',
-      startedAt: Date.now(),
+      timeOption: args.timeOption,
+      currentModuleIndex: 0,
+      moduleExpiresAt: expiresAt,
+      startedAt,
     })
+    await scheduleExpiry(ctx, attemptId, 0, expiresAt)
+
+    return attemptId
   },
 })
 
@@ -215,6 +374,68 @@ export const listMine = query({
 })
 
 /**
+ * Ends the current module early, at the student's request.
+ *
+ * One-way, and the last module has nowhere to go, so this submits instead —
+ * see `submit` for the confirmed, deliberate version of that.
+ *
+ * `moduleIndex` is what the client believes it is finishing. Mismatches are a
+ * silent no-op rather than an error: a second tab, a retried request, or a
+ * click that races the expiry job all arrive here, and none of them should
+ * skip a module the student never saw.
+ */
+export const advanceModule = mutation({
+  args: { attemptId: v.id('attempts'), moduleIndex: v.number() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const attempt = await requireOwnedAttempt(ctx, args.attemptId)
+
+    if (attempt.status === 'submitted') return null
+    if ((attempt.currentModuleIndex ?? 0) !== args.moduleIndex) return null
+
+    await advanceOrSubmit(ctx, attempt, Date.now())
+    return null
+  },
+})
+
+/**
+ * Closes a module whose time has run out. Scheduled at the deadline by
+ * `scheduleExpiry`; never called from a client.
+ *
+ * Answers are already saved as the student works, so "auto-submit" here means
+ * sealing what they have and moving on — there is nothing buffered to lose.
+ */
+export const expireModule = internalMutation({
+  args: { attemptId: v.id('attempts'), moduleIndex: v.number() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const attempt = await ctx.db.get(args.attemptId)
+
+    // Already finished, or the student moved on before the deadline. Both are
+    // the expected outcome of finishing a module early.
+    if (!attempt || attempt.status === 'submitted') return null
+    if ((attempt.currentModuleIndex ?? 0) !== args.moduleIndex) return null
+
+    const expiresAt = attempt.moduleExpiresAt
+    if (expiresAt === undefined) return null
+
+    /*
+     * The deadline moved further out after this job was booked. Rebook rather
+     * than return, or nothing would be left to close the module.
+     */
+    if (Date.now() < expiresAt - DEADLINE_GRACE_MS) {
+      await scheduleExpiry(ctx, args.attemptId, args.moduleIndex, expiresAt)
+      return null
+    }
+
+    // Counts the next module from the deadline, not from whenever the job
+    // actually ran, so scheduler lag can't quietly hand out extra time.
+    await advanceOrSubmit(ctx, attempt, expiresAt)
+    return null
+  },
+})
+
+/**
  * Upserts the caller's response to one question.
  *
  * Validates that the question actually belongs to the attempt's test, so a
@@ -241,13 +462,8 @@ export const saveAnswer = mutation({
       throw new Error(`Unknown test: ${attempt.testSlug}`)
     }
 
-    const question = test.modules
-      .flatMap((m) => m.questions)
-      .find((q) => q.id === args.questionId)
-
-    if (!question) {
-      throw new Error(`Unknown question: ${args.questionId}`)
-    }
+    const { question, moduleIndex } = locateQuestion(test, args.questionId)
+    requireOpenModule(attempt, moduleIndex)
 
     if (question.type === 'multiple-choice') {
       const index = Number(args.value)
@@ -302,6 +518,16 @@ export const clearAnswer = mutation({
       throw new Error('This attempt has already been submitted')
     }
 
+    // Clearing is a write like any other: a closed module is closed in both
+    // directions, or a student could erase answers after time was called.
+    const test = getTest(attempt.testSlug)
+    if (test) {
+      requireOpenModule(
+        attempt,
+        locateQuestion(test, args.questionId).moduleIndex,
+      )
+    }
+
     const existing = await ctx.db
       .query('answers')
       .withIndex('by_attempt_and_question', (q) =>
@@ -336,6 +562,9 @@ export const submit = mutation({
     await ctx.db.patch(args.attemptId, {
       status: 'submitted',
       submittedAt: Date.now(),
+      // Dropped so nothing downstream renders a countdown against a deadline
+      // that no longer applies. The scheduled expiry job no-ops on status.
+      moduleExpiresAt: undefined,
     })
 
     return null

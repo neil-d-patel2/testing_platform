@@ -6,17 +6,34 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Clock,
   ImageOff,
   LayoutGrid,
   Lock,
+  TriangleAlert,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import RichText from '#/components/RichText.tsx'
 import { api } from '../../../convex/_generated/api'
+import {
+  DEFAULT_TIME_OPTION,
+  TIME_OPTIONS,
+  TIME_OPTION_LABELS,
+  moduleSeconds,
+} from '../../../convex/timing'
+import type { FunctionReturnType } from 'convex/server'
+import type { TimeOption } from '../../../convex/timing'
 import type { Id } from '../../../convex/_generated/dataModel'
 
 export const Route = createFileRoute('/tests/$slug')({
+  /*
+   * `?retake=1` arrives from the Retake button on the tests list. It reopens
+   * the instructions screen over a finished attempt so the student re-picks
+   * their time; without it, a submitted attempt renders read-only.
+   */
+  validateSearch: (search: Record<string, unknown>): { retake?: boolean } =>
+    search.retake === '1' || search.retake === true ? { retake: true } : {},
   beforeLoad: ({ context }) => {
     if (!context.userId) {
       throw redirect({ to: '/sign-in/$', params: { _splat: '' } })
@@ -26,8 +43,14 @@ export const Route = createFileRoute('/tests/$slug')({
     context.queryClient.ensureQueryData(
       convexQuery(api.tests.get, { slug: params.slug }),
     ),
-  component: AttemptRunner,
+  component: TestPage,
 })
+
+/** The stripped test and the live attempt, as the server hands them over. */
+type PublicTest = NonNullable<FunctionReturnType<typeof api.tests.get>>
+type ActiveAttempt = NonNullable<
+  FunctionReturnType<typeof api.attempts.getActive>
+>
 
 /** How long to wait after the last keystroke before saving a grid-in answer. */
 const TYPING_SAVE_DELAY_MS = 600
@@ -44,22 +67,327 @@ const FOCUS_RING =
 /** 44px minimum touch target, per WCAG 2.5.5 / platform guidance. */
 const TAP_TARGET = 'min-h-11'
 
-function AttemptRunner() {
+function formatDuration(totalSeconds: number) {
+  const minutes = Math.round(totalSeconds / 60)
+  if (minutes < 60) return `${minutes} min`
+
+  const hours = Math.floor(minutes / 60)
+  const remainder = minutes % 60
+  return remainder === 0 ? `${hours} hr` : `${hours} hr ${remainder} min`
+}
+
+/** `M:SS`, the shape a countdown is read at a glance. */
+function formatClock(ms: number) {
+  const total = Math.max(0, Math.ceil(ms / 1000))
+  const minutes = Math.floor(total / 60)
+  const seconds = total % 60
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
+}
+
+function testSeconds(test: PublicTest, option: TimeOption) {
+  return test.modules.reduce(
+    (total, m) => total + moduleSeconds(m.timeLimitSeconds, option),
+    0,
+  )
+}
+
+/**
+ * Picks between the three states this route can be in: not started, running,
+ * finished. Kept separate from the runner so the runner can assume it has a
+ * live attempt rather than guarding every field.
+ */
+function TestPage() {
   const { slug } = Route.useParams()
+  const { retake } = Route.useSearch()
   const { data: test } = useSuspenseQuery(convexQuery(api.tests.get, { slug }))
   const { data: attempt } = useQuery(
     convexQuery(api.attempts.getActive, { testSlug: slug }),
   )
 
+  if (!test) {
+    return (
+      <Centered>
+        <h1 className="font-display text-2xl font-semibold text-black">
+          Test not found
+        </h1>
+        <Link
+          to="/tests"
+          className={`rounded text-sm text-black underline ${FOCUS_RING}`}
+        >
+          Back to practice tests
+        </Link>
+      </Centered>
+    )
+  }
+
+  /*
+   * `undefined` is "the attempt query hasn't answered yet", `null` is "there
+   * is no attempt". They must not be collapsed: showing the instructions
+   * screen to someone who is mid-test, even for a frame, invites them to click
+   * Begin on a test they already started.
+   */
+  if (attempt === undefined) {
+    return (
+      <Centered>
+        <p className="text-sm text-neutral-600">Loading {test.title}…</p>
+      </Centered>
+    )
+  }
+
+  if (attempt === null || (attempt.status === 'submitted' && retake)) {
+    return <Instructions slug={slug} test={test} isRetake={attempt !== null} />
+  }
+
+  return <AttemptRunner test={test} attempt={attempt} />
+}
+
+function Centered({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-white px-6 text-center">
+      {children}
+    </main>
+  )
+}
+
+/**
+ * The screen between picking a test and taking it: what's coming, and how much
+ * time the student gets for it.
+ *
+ * The time choice lives here rather than in a profile setting because it is
+ * per-sitting — a student may be entitled to extended time and still want to
+ * practise under standard conditions.
+ */
+function Instructions({
+  slug,
+  test,
+  isRetake,
+}: {
+  slug: string
+  test: PublicTest
+  isRetake: boolean
+}) {
   const start = useMutation(api.attempts.start)
+  const retakeTest = useMutation(api.attempts.retake)
+  const [option, setOption] = useState<TimeOption>(DEFAULT_TIME_OPTION)
+  const [starting, setStarting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const questionCount = test.modules.reduce((n, m) => n + m.questions.length, 0)
+
+  const begin = async () => {
+    setStarting(true)
+    setError(null)
+    try {
+      // `retake` leaves the finished attempt intact and opens a fresh one;
+      // `start` would just hand back the old one.
+      const run = isRetake ? retakeTest : start
+      await run({ testSlug: slug, timeOption: option })
+    } catch {
+      setError('Could not start the test. Check your connection and try again.')
+    } finally {
+      setStarting(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-white text-black">
+      <main className="mx-auto max-w-2xl px-6 py-12">
+        <Link
+          to="/tests"
+          className={`rounded text-sm text-neutral-600 transition-colors hover:text-black ${FOCUS_RING}`}
+        >
+          ← All tests
+        </Link>
+
+        <h1 className="font-display mt-4 text-3xl font-semibold tracking-tight">
+          {test.title}
+        </h1>
+        {test.description ? (
+          <p className="mt-2 text-[15px] leading-relaxed text-neutral-600">
+            {test.description}
+          </p>
+        ) : null}
+
+        <h2 className="font-display mt-10 text-lg font-semibold">
+          Choose your time
+        </h2>
+        <fieldset className="mt-4">
+          <legend className="sr-only">Time accommodation</legend>
+          <div className="space-y-3">
+            {TIME_OPTIONS.map((value) => {
+              const selected = value === option
+              return (
+                <label key={value} className="block cursor-pointer">
+                  <input
+                    type="radio"
+                    name="time-option"
+                    value={value}
+                    checked={selected}
+                    onChange={() => setOption(value)}
+                    className="peer sr-only"
+                  />
+                  <span
+                    className={`flex items-center justify-between gap-4 rounded-lg border px-4 py-3.5 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-black peer-focus-visible:ring-offset-2 ${
+                      selected
+                        ? 'border-black bg-neutral-50'
+                        : 'border-neutral-300 hover:border-neutral-500 hover:bg-neutral-50'
+                    }`}
+                  >
+                    <span className="flex items-center gap-3">
+                      <span
+                        aria-hidden="true"
+                        className={`flex size-5 shrink-0 items-center justify-center rounded-full border ${
+                          selected ? 'border-black' : 'border-neutral-400'
+                        }`}
+                      >
+                        {selected ? (
+                          <span className="size-2.5 rounded-full bg-black" />
+                        ) : null}
+                      </span>
+                      <span className="text-[15px] font-medium">
+                        {TIME_OPTION_LABELS[value]}
+                      </span>
+                    </span>
+                    <span className="text-sm text-neutral-600">
+                      {formatDuration(testSeconds(test, value))} total
+                    </span>
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+        </fieldset>
+
+        <h2 className="font-display mt-10 text-lg font-semibold">
+          What to expect
+        </h2>
+        <ol className="mt-4 divide-y divide-neutral-200 border-y border-neutral-200">
+          {test.modules.map((module, index) => (
+            <li
+              key={module.id}
+              className="flex items-baseline justify-between gap-4 py-3"
+            >
+              <span className="text-[15px]">
+                <span className="mr-2 text-neutral-500">{index + 1}.</span>
+                {module.title}
+              </span>
+              <span className="shrink-0 text-sm text-neutral-600">
+                {module.questions.length} questions ·{' '}
+                {formatDuration(moduleSeconds(module.timeLimitSeconds, option))}
+              </span>
+            </li>
+          ))}
+        </ol>
+        <p className="mt-3 text-sm text-neutral-600">
+          {questionCount} questions in total.
+        </p>
+
+        <ul className="mt-8 space-y-2 text-sm leading-relaxed text-neutral-700">
+          <li>
+            Each section is timed on its own. Finishing early does not add time
+            to the next one.
+          </li>
+          <li>
+            <strong className="font-semibold text-black">
+              When a section&rsquo;s time runs out it is submitted automatically
+            </strong>{' '}
+            and the test moves on, whether or not this window is open.
+          </li>
+          <li>
+            Sections run in order. Once one ends you cannot go back to it, but
+            within a section you can move between questions freely.
+          </li>
+          <li>Answers save as you go — a refresh will not lose them.</li>
+        </ul>
+
+        {error ? (
+          <p
+            role="alert"
+            className="mt-6 flex items-start gap-2 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
+          >
+            <TriangleAlert size={16} aria-hidden="true" className="mt-0.5" />
+            {error}
+          </p>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={() => void begin()}
+          disabled={starting}
+          className={`mt-8 w-full rounded-full bg-black px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-80 disabled:opacity-50 ${TAP_TARGET} ${FOCUS_RING}`}
+        >
+          {starting
+            ? 'Starting…'
+            : `Begin test — ${TIME_OPTION_LABELS[option].toLowerCase()}`}
+        </button>
+        <p className="mt-3 text-center text-xs text-neutral-500">
+          The timer starts as soon as you begin.
+        </p>
+      </main>
+    </div>
+  )
+}
+
+/**
+ * Ticks a countdown against an absolute deadline and calls `onExpire` once
+ * when it passes.
+ *
+ * Starts at `null` rather than reading the clock during render, so the server
+ * pass and the first client render agree. Nothing here is authoritative: the
+ * server refuses late writes on its own, and this only decides what the
+ * student sees and when the client asks to move on.
+ */
+function useCountdown(expiresAt: number | undefined, onExpire: () => void) {
+  const [remaining, setRemaining] = useState<number | null>(null)
+
+  // Held in a ref so a new callback identity each render doesn't restart the
+  // interval (and re-fire the tick) on every keystroke.
+  const onExpireRef = useRef(onExpire)
+  useEffect(() => {
+    onExpireRef.current = onExpire
+  })
+
+  useEffect(() => {
+    if (expiresAt === undefined) {
+      setRemaining(null)
+      return
+    }
+
+    let fired = false
+    const tick = () => {
+      const left = expiresAt - Date.now()
+      setRemaining(left)
+      if (left <= 0 && !fired) {
+        fired = true
+        onExpireRef.current()
+      }
+    }
+
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [expiresAt])
+
+  return remaining
+}
+
+function AttemptRunner({
+  test,
+  attempt,
+}: {
+  test: PublicTest
+  attempt: ActiveAttempt
+}) {
   const saveAnswer = useMutation(api.attempts.saveAnswer)
   const clearAnswer = useMutation(api.attempts.clearAnswer)
+  const advanceModule = useMutation(api.attempts.advanceModule)
   const submit = useMutation(api.attempts.submit)
 
-  const [moduleIndex, setModuleIndex] = useState(0)
   const [questionIndex, setQuestionIndex] = useState(0)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [confirmingSubmit, setConfirmingSubmit] = useState(false)
+  const [confirmingAdvance, setConfirmingAdvance] = useState(false)
+  const [saveFailed, setSaveFailed] = useState(false)
 
   /*
    * Local echo of what the student just did, layered over the server's copy.
@@ -68,18 +396,27 @@ function AttemptRunner() {
    */
   const [draft, setDraft] = useState<Record<string, string>>({})
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
-  const startRequested = useRef(false)
+  const pending = useRef<Record<string, string>>({})
 
-  const attemptId: Id<'attempts'> | undefined = attempt?.attemptId
-  const isSubmitted = attempt?.status === 'submitted'
+  const attemptId: Id<'attempts'> = attempt.attemptId
+  const isSubmitted = attempt.status === 'submitted'
 
-  // Create the attempt on first visit. `start` is idempotent server-side; the
-  // ref keeps a Strict Mode double-render from firing two requests.
+  // The server owns which module is open; this is a read of that, not a
+  // preference. Clamped because content can be edited under a live attempt.
+  const moduleIndex = Math.min(
+    attempt.currentModuleIndex,
+    test.modules.length - 1,
+  )
+  const currentModule = test.modules[moduleIndex]
+
+  // A new module is a new first question, and any stale "not saved" warning
+  // belongs to the section that just closed.
   useEffect(() => {
-    if (attempt !== null || startRequested.current) return
-    startRequested.current = true
-    void start({ testSlug: slug })
-  }, [attempt, slug, start])
+    setQuestionIndex(0)
+    setPaletteOpen(false)
+    setConfirmingAdvance(false)
+    setSaveFailed(false)
+  }, [moduleIndex])
 
   useEffect(() => {
     const timers = saveTimers.current
@@ -100,12 +437,22 @@ function AttemptRunner() {
 
   const persist = useCallback(
     (questionId: string, value: string) => {
-      if (!attemptId) return
-      if (value.trim() === '') {
-        void clearAnswer({ attemptId, questionId })
-      } else {
-        void saveAnswer({ attemptId, questionId, value })
-      }
+      delete pending.current[questionId]
+      const write =
+        value.trim() === ''
+          ? clearAnswer({ attemptId, questionId })
+          : saveAnswer({ attemptId, questionId, value })
+
+      /*
+       * A rejection here is nearly always the module deadline passing between
+       * the click and the write, which is correct behaviour — but it can also
+       * be a dropped connection, and an exam that loses an answer silently is
+       * worse than one that says so.
+       */
+      void write.then(
+        () => setSaveFailed(false),
+        () => setSaveFailed(true),
+      )
     },
     [attemptId, saveAnswer, clearAnswer],
   )
@@ -116,6 +463,7 @@ function AttemptRunner() {
 
       clearTimeout(saveTimers.current[questionId])
       if (debounce) {
+        pending.current[questionId] = value
         saveTimers.current[questionId] = setTimeout(
           () => persist(questionId, value),
           TYPING_SAVE_DELAY_MS,
@@ -136,26 +484,33 @@ function AttemptRunner() {
     [persist],
   )
 
-  if (!test) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-white px-6 text-center">
-        <h1 className="font-display text-2xl font-semibold text-black">
-          Test not found
-        </h1>
-        <Link
-          to="/tests"
-          className={`rounded text-sm text-black underline ${FOCUS_RING}`}
-        >
-          Back to practice tests
-        </Link>
-      </main>
-    )
-  }
+  /** Writes every debounced keystroke still in flight. Used before a module closes. */
+  const flushAll = useCallback(() => {
+    for (const [questionId, value] of Object.entries(pending.current)) {
+      clearTimeout(saveTimers.current[questionId])
+      persist(questionId, value)
+    }
+  }, [persist])
 
-  const currentModule = test.modules[moduleIndex]
+  const endModule = useCallback(() => {
+    flushAll()
+    void advanceModule({ attemptId, moduleIndex }).catch(() => {
+      // The expiry job may have got there first, which is the same outcome.
+    })
+  }, [advanceModule, attemptId, flushAll, moduleIndex])
+
+  const remaining = useCountdown(
+    isSubmitted ? undefined : attempt.moduleExpiresAt,
+    endModule,
+  )
+
   const question = currentModule.questions[questionIndex]
-  const answers = { ...(attempt?.answers ?? {}), ...draft }
+  const answers = { ...attempt.answers, ...draft }
   const value = answers[question.id] ?? ''
+
+  const moduleAnswered = currentModule.questions.filter(
+    (q) => (answers[q.id] ?? '') !== '',
+  ).length
 
   const totalAnswered = test.modules.reduce(
     (n, m) =>
@@ -167,31 +522,19 @@ function AttemptRunner() {
     0,
   )
 
-  const goToModule = (index: number) => {
-    setModuleIndex(index)
-    setQuestionIndex(0)
-  }
-
-  const isFirst = moduleIndex === 0 && questionIndex === 0
-  const isLast =
-    moduleIndex === test.modules.length - 1 &&
-    questionIndex === currentModule.questions.length - 1
+  const isLastModule = moduleIndex === test.modules.length - 1
+  const isFirstQuestion = questionIndex === 0
+  const isLastQuestion = questionIndex === currentModule.questions.length - 1
 
   const goPrevious = () => {
-    if (questionIndex > 0) {
-      setQuestionIndex(questionIndex - 1)
-    } else if (moduleIndex > 0) {
-      const previous = test.modules[moduleIndex - 1]
-      setModuleIndex(moduleIndex - 1)
-      setQuestionIndex(previous.questions.length - 1)
-    }
+    if (questionIndex > 0) setQuestionIndex(questionIndex - 1)
   }
 
   const goNext = () => {
-    if (questionIndex < currentModule.questions.length - 1) {
+    if (!isLastQuestion) {
       setQuestionIndex(questionIndex + 1)
-    } else if (moduleIndex < test.modules.length - 1) {
-      goToModule(moduleIndex + 1)
+    } else if (!isLastModule) {
+      setConfirmingAdvance(true)
     }
   }
 
@@ -402,9 +745,15 @@ function AttemptRunner() {
           </div>
 
           <div className="flex items-center gap-3 text-sm">
+            {saveFailed ? (
+              <span className="flex items-center gap-1.5 text-amber-700">
+                <TriangleAlert size={14} aria-hidden="true" /> Not saved
+              </span>
+            ) : null}
             <span className="text-neutral-600" aria-live="polite">
               {totalAnswered} of {totalQuestions} answered
             </span>
+            <Countdown remaining={remaining} />
             {isSubmitted ? (
               <span className="flex items-center gap-1.5 rounded-full bg-black px-3 py-1.5 text-sm font-medium text-white">
                 <Check size={14} aria-hidden="true" /> Submitted
@@ -413,8 +762,7 @@ function AttemptRunner() {
               <button
                 type="button"
                 onClick={() => setConfirmingSubmit(true)}
-                disabled={!attemptId}
-                className={`rounded-full bg-black px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-80 disabled:opacity-40 ${TAP_TARGET} ${FOCUS_RING}`}
+                className={`rounded-full bg-black px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-80 ${TAP_TARGET} ${FOCUS_RING}`}
               >
                 Finish test
               </button>
@@ -422,68 +770,115 @@ function AttemptRunner() {
           </div>
         </div>
 
-        <nav aria-label="Test modules" className="mx-auto max-w-6xl px-6">
-          <ul className="flex gap-6 overflow-x-auto">
+        {/*
+          A progress read-out, not navigation: the server decides which module
+          is open, so an earlier one is genuinely unreachable and must not look
+          like something to click.
+        */}
+        <nav aria-label="Test sections" className="mx-auto max-w-6xl px-6">
+          <ol className="flex gap-6 overflow-x-auto pb-2.5">
             {test.modules.map((m, index) => {
-              const active = index === moduleIndex
+              const state =
+                index < moduleIndex
+                  ? 'done'
+                  : index === moduleIndex
+                    ? 'current'
+                    : 'upcoming'
               return (
-                <li key={m.id}>
-                  <button
-                    type="button"
-                    onClick={() => goToModule(index)}
-                    aria-current={active ? 'true' : undefined}
-                    className={`border-b-2 pt-1 pb-2.5 text-sm whitespace-nowrap transition-colors ${FOCUS_RING} ${
-                      active
-                        ? 'border-black font-semibold text-black'
-                        : 'border-transparent text-neutral-600 hover:text-black'
-                    }`}
-                  >
-                    {m.title}
-                  </button>
+                <li
+                  key={m.id}
+                  aria-current={state === 'current' ? 'step' : undefined}
+                  className={`flex items-center gap-1.5 border-b-2 pt-1 text-sm whitespace-nowrap ${
+                    state === 'current'
+                      ? 'border-black font-semibold text-black'
+                      : 'border-transparent text-neutral-500'
+                  }`}
+                >
+                  {state === 'done' ? (
+                    <Check size={14} aria-hidden="true" />
+                  ) : state === 'upcoming' ? (
+                    <Lock size={13} aria-hidden="true" />
+                  ) : null}
+                  {m.title}
+                  {state === 'done' ? (
+                    <span className="sr-only"> (finished)</span>
+                  ) : null}
+                  {state === 'upcoming' ? (
+                    <span className="sr-only"> (locked)</span>
+                  ) : null}
                 </li>
               )
             })}
-          </ul>
+          </ol>
         </nav>
       </header>
 
-      {confirmingSubmit && !isSubmitted ? (
-        <div
-          role="alertdialog"
-          aria-label="Confirm submission"
-          className="border-b border-neutral-200 bg-neutral-100"
-        >
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-6 py-4">
-            <p className="text-sm text-black">
-              <strong className="font-semibold">
-                Submit and lock this test?
-              </strong>{' '}
-              {totalQuestions - totalAnswered > 0
-                ? `${totalQuestions - totalAnswered} of ${totalQuestions} questions are unanswered.`
-                : `All ${totalQuestions} questions are answered.`}{' '}
-              You won’t be able to change your answers afterwards.
-            </p>
-            <div className="ml-auto flex gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirmingSubmit(false)}
-                className={`rounded-full border border-neutral-400 px-5 text-sm font-medium transition-colors hover:bg-white ${TAP_TARGET} ${FOCUS_RING}`}
-              >
-                Keep working
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (attemptId) void submit({ attemptId })
-                  setConfirmingSubmit(false)
-                }}
-                className={`rounded-full bg-black px-5 text-sm font-medium text-white transition-opacity hover:opacity-80 ${TAP_TARGET} ${FOCUS_RING}`}
-              >
-                Submit test
-              </button>
-            </div>
+      {confirmingAdvance && !isSubmitted ? (
+        <Banner label="Confirm moving on">
+          <p className="text-sm text-black">
+            <strong className="font-semibold">
+              Finish {currentModule.title}?
+            </strong>{' '}
+            {currentModule.questions.length - moduleAnswered > 0
+              ? `${currentModule.questions.length - moduleAnswered} of ${currentModule.questions.length} questions are unanswered.`
+              : `All ${currentModule.questions.length} questions are answered.`}{' '}
+            You won’t be able to come back to this section, and the time left in
+            it is not carried over.
+          </p>
+          <div className="ml-auto flex gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirmingAdvance(false)}
+              className={`rounded-full border border-neutral-400 px-5 text-sm font-medium transition-colors hover:bg-white ${TAP_TARGET} ${FOCUS_RING}`}
+            >
+              Keep working
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmingAdvance(false)
+                endModule()
+              }}
+              className={`rounded-full bg-black px-5 text-sm font-medium text-white transition-opacity hover:opacity-80 ${TAP_TARGET} ${FOCUS_RING}`}
+            >
+              Next section
+            </button>
           </div>
-        </div>
+        </Banner>
+      ) : null}
+
+      {confirmingSubmit && !isSubmitted ? (
+        <Banner label="Confirm submission">
+          <p className="text-sm text-black">
+            <strong className="font-semibold">
+              Submit and lock this test?
+            </strong>{' '}
+            {totalQuestions - totalAnswered > 0
+              ? `${totalQuestions - totalAnswered} of ${totalQuestions} questions are unanswered.`
+              : `All ${totalQuestions} questions are answered.`}{' '}
+            You won’t be able to change your answers afterwards.
+          </p>
+          <div className="ml-auto flex gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirmingSubmit(false)}
+              className={`rounded-full border border-neutral-400 px-5 text-sm font-medium transition-colors hover:bg-white ${TAP_TARGET} ${FOCUS_RING}`}
+            >
+              Keep working
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                flushAll()
+                void submit({ attemptId })
+                setConfirmingSubmit(false)
+              }}
+              className={`rounded-full bg-black px-5 text-sm font-medium text-white transition-opacity hover:opacity-80 ${TAP_TARGET} ${FOCUS_RING}`}
+            >
+              Submit test
+            </button>
+          </div>
+        </Banner>
       ) : null}
 
       {isSubmitted ? (
@@ -566,7 +961,7 @@ function AttemptRunner() {
           <button
             type="button"
             onClick={goPrevious}
-            disabled={isFirst}
+            disabled={isFirstQuestion}
             className={`flex items-center gap-1.5 rounded-full border border-neutral-300 px-5 text-sm font-medium transition-colors hover:bg-neutral-100 disabled:opacity-30 disabled:hover:bg-transparent ${TAP_TARGET} ${FOCUS_RING}`}
           >
             <ChevronLeft size={16} aria-hidden="true" /> Previous
@@ -586,13 +981,66 @@ function AttemptRunner() {
           <button
             type="button"
             onClick={goNext}
-            disabled={isLast}
+            disabled={isLastQuestion && isLastModule}
             className={`flex items-center gap-1.5 rounded-full border border-neutral-300 px-5 text-sm font-medium transition-colors hover:bg-neutral-100 disabled:opacity-30 disabled:hover:bg-transparent ${TAP_TARGET} ${FOCUS_RING}`}
           >
-            Next <ChevronRight size={16} aria-hidden="true" />
+            {isLastQuestion && !isLastModule ? 'Next section' : 'Next'}{' '}
+            <ChevronRight size={16} aria-hidden="true" />
           </button>
         </div>
       </div>
     </div>
+  )
+}
+
+/** The full-width confirmation strip under the header. */
+function Banner({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div
+      role="alertdialog"
+      aria-label={label}
+      className="border-b border-neutral-200 bg-neutral-100"
+    >
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-6 py-4">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Time left in the current section.
+ *
+ * Not a live region: announcing every second would make a screen reader
+ * unusable for the hour this is on screen. It carries a label and can be read
+ * on demand.
+ */
+function Countdown({ remaining }: { remaining: number | null }) {
+  if (remaining === null) return null
+
+  const minutesLeft = remaining / 60_000
+  const tone =
+    minutesLeft < 1
+      ? 'text-red-700'
+      : minutesLeft < 5
+        ? 'text-amber-700'
+        : 'text-black'
+
+  return (
+    <span
+      role="timer"
+      aria-live="off"
+      className={`flex items-center gap-1.5 font-medium tabular-nums ${tone}`}
+    >
+      <Clock size={14} aria-hidden="true" />
+      <span className="sr-only">Time remaining in this section: </span>
+      {formatClock(remaining)}
+    </span>
   )
 }

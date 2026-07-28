@@ -17,6 +17,7 @@ import type * as content_tests_satPracticeTest1_readingWriting1 from "../content
 import type * as content_tests_satPracticeTest1_readingWriting2 from "../content/tests/satPracticeTest1/readingWriting2.js";
 import type * as content_types from "../content/types.js";
 import type * as tests from "../tests.js";
+import type * as timing from "../timing.js";
 import type * as todos from "../todos.js";
 import type * as tutor from "../tutor.js";
 import type * as users from "../users.js";
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   "content/tests/satPracticeTest1/readingWriting2": typeof content_tests_satPracticeTest1_readingWriting2;
   "content/types": typeof content_types;
   tests: typeof tests;
+  timing: typeof timing;
   todos: typeof todos;
   tutor: typeof tutor;
   users: typeof users;

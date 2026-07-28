@@ -1,14 +1,7 @@
 import { convexQuery } from '@convex-dev/react-query'
-import { useMutation } from 'convex/react'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
-import {
-  Link,
-  createFileRoute,
-  redirect,
-  useNavigate,
-} from '@tanstack/react-router'
+import { Link, createFileRoute, redirect } from '@tanstack/react-router'
 import { Clock, FileText, ListChecks, RotateCcw } from 'lucide-react'
-import { useState } from 'react'
 
 import Navbar from '#/components/Navbar.tsx'
 import { api } from '../../../convex/_generated/api'
@@ -51,25 +44,12 @@ function formatDate(ms: number) {
 }
 
 function TestsPage() {
-  const navigate = useNavigate()
   const { data: tests } = useSuspenseQuery(convexQuery(api.tests.list, {}))
   const { data: myAttempts } = useQuery(convexQuery(api.attempts.listMine, {}))
-  const retake = useMutation(api.attempts.retake)
-  const [retaking, setRetaking] = useState<string | null>(null)
 
   const statusBySlug = new Map(
     (myAttempts ?? []).map((attempt) => [attempt.testSlug, attempt]),
   )
-
-  const onRetake = async (slug: string) => {
-    setRetaking(slug)
-    try {
-      await retake({ testSlug: slug })
-      await navigate({ to: '/tests/$slug', params: { slug } })
-    } finally {
-      setRetaking(null)
-    }
-  }
 
   return (
     <div className="relative min-h-screen bg-black">
@@ -160,15 +140,20 @@ function TestsPage() {
                         >
                           View submission
                         </Link>
-                        <button
-                          type="button"
-                          onClick={() => void onRetake(test.slug)}
-                          disabled={retaking === test.slug}
-                          className="flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-medium text-black transition-opacity hover:opacity-80 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none"
+                        {/*
+                          Retake doesn't start anything from here — it opens
+                          the instructions screen, where the student re-picks
+                          their time before the clock starts.
+                        */}
+                        <Link
+                          to="/tests/$slug"
+                          params={{ slug: test.slug }}
+                          search={{ retake: true }}
+                          className="flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-medium text-black transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none"
                         >
                           <RotateCcw size={13} aria-hidden="true" />
-                          {retaking === test.slug ? 'Starting…' : 'Retake'}
-                        </button>
+                          Retake
+                        </Link>
                       </>
                     ) : attempt ? (
                       <>
