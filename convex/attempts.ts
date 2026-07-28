@@ -115,6 +115,12 @@ function requireOpenModule(attempt: Doc<'attempts'>, moduleIndex: number) {
     throw new Error('That section is closed')
   }
 
+  // `currentModuleIndex` moves to the next section as the break begins, so
+  // without this the break would be a screen the client could simply skip.
+  if (attempt.breakEndsAt !== undefined && Date.now() < attempt.breakEndsAt) {
+    throw new Error('You are on a break')
+  }
+
   const expiresAt = attempt.moduleExpiresAt
   if (expiresAt !== undefined && Date.now() > expiresAt + DEADLINE_GRACE_MS) {
     throw new Error('Time is up for this section')
@@ -134,7 +140,8 @@ async function advanceOrSubmit(
   from: number,
 ) {
   const test = getTest(attempt.testSlug)
-  const nextIndex = (attempt.currentModuleIndex ?? 0) + 1
+  const currentIndex = attempt.currentModuleIndex ?? 0
+  const nextIndex = currentIndex + 1
 
   // An unknown slug can only mean content was deleted out from under a live
   // attempt. Submitting is the safe end state: answers are kept, and the
@@ -144,18 +151,53 @@ async function advanceOrSubmit(
       status: 'submitted',
       submittedAt: from,
       moduleExpiresAt: undefined,
+      breakEndsAt: undefined,
     })
     return
   }
 
+  /*
+   * A break between the two sections pushes the next module's start back. The
+   * deadline is fixed here, at the far side of the break, rather than when the
+   * break ends — so the next section is exactly its full length no matter how
+   * or when the break is closed out.
+   */
+  const breakSeconds = test.modules[currentIndex].breakAfterSeconds ?? 0
+  const breakEndsAt = breakSeconds > 0 ? from + breakSeconds * 1000 : undefined
   const option = asTimeOption(attempt.timeOption)
-  const expiresAt = deadlineFor(test, nextIndex, option, from)
+  const expiresAt = deadlineFor(test, nextIndex, option, breakEndsAt ?? from)
 
   await ctx.db.patch(attempt._id, {
     currentModuleIndex: nextIndex,
     moduleExpiresAt: expiresAt,
+    breakEndsAt,
   })
   await scheduleExpiry(ctx, attempt._id, nextIndex, expiresAt)
+
+  if (breakEndsAt !== undefined) {
+    // Ends the break on its own, so a student who closes the tab over the
+    // break comes back to a section already running rather than to a break
+    // screen that never lets go.
+    await ctx.scheduler.runAt(breakEndsAt, internal.attempts.finishBreak, {
+      attemptId: attempt._id,
+      breakEndsAt,
+    })
+  }
+}
+
+/**
+ * Clears the break flag, but only once it has genuinely elapsed.
+ *
+ * The break is mandatory, so this is the one thing standing between a student
+ * and skipping it — both callers route through here, and an early request is a
+ * no-op rather than an error.
+ */
+async function clearBreakIfOver(ctx: MutationCtx, attempt: Doc<'attempts'>) {
+  const breakEndsAt = attempt.breakEndsAt
+  if (breakEndsAt === undefined) return
+  if (Date.now() < breakEndsAt) return
+
+  await ctx.db.patch(attempt._id, { breakEndsAt: undefined })
 }
 
 /**
@@ -204,6 +246,7 @@ export const getActive = query({
        */
       currentModuleIndex: attempt.currentModuleIndex ?? 0,
       moduleExpiresAt: attempt.moduleExpiresAt,
+      breakEndsAt: attempt.breakEndsAt,
       // Keyed by question id so the client can look up a response directly.
       answers: Object.fromEntries(answers.map((a) => [a.questionId, a.value])),
     }
@@ -393,7 +436,50 @@ export const advanceModule = mutation({
     if (attempt.status === 'submitted') return null
     if ((attempt.currentModuleIndex ?? 0) !== args.moduleIndex) return null
 
+    // Nothing to end during a break — the section on the far side of it hasn't
+    // started, and advancing would skip it outright.
+    if (attempt.breakEndsAt !== undefined && Date.now() < attempt.breakEndsAt) {
+      return null
+    }
+
     await advanceOrSubmit(ctx, attempt, Date.now())
+    return null
+  },
+})
+
+/**
+ * Ends the break once it has run out, releasing the next section.
+ *
+ * The scheduled `finishBreak` normally gets here first; this exists so the
+ * student's own tab can close the break out the instant their countdown hits
+ * zero instead of waiting on a job, and so a break can still end if that job
+ * never runs. Early calls do nothing — see `clearBreakIfOver`.
+ */
+export const endBreak = mutation({
+  args: { attemptId: v.id('attempts') },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const attempt = await requireOwnedAttempt(ctx, args.attemptId)
+    if (attempt.status === 'submitted') return null
+
+    await clearBreakIfOver(ctx, attempt)
+    return null
+  },
+})
+
+/** Scheduled at the end of a break. Never called from a client. */
+export const finishBreak = internalMutation({
+  args: { attemptId: v.id('attempts'), breakEndsAt: v.number() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const attempt = await ctx.db.get(args.attemptId)
+    if (!attempt || attempt.status === 'submitted') return null
+
+    // Stale job: the attempt is on a different break than the one this was
+    // booked for, so leave that one to its own scheduled call.
+    if (attempt.breakEndsAt !== args.breakEndsAt) return null
+
+    await clearBreakIfOver(ctx, attempt)
     return null
   },
 })

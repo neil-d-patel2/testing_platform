@@ -76,6 +76,16 @@ export interface TestModule {
   id: string
   title: string
   timeLimitSeconds: number
+  /**
+   * A mandatory break that follows this module, in seconds. Omitted means the
+   * next module starts immediately.
+   *
+   * Attached to the module rather than hardcoded at the Reading/Writing → Math
+   * boundary so a test with a different shape can put its break elsewhere, or
+   * have none. Break time is never scaled by a time accommodation — extended
+   * time is for working, not resting.
+   */
+  breakAfterSeconds?: number
   questions: Array<Question>
 }
 
@@ -97,6 +107,7 @@ export interface PublicModule {
   id: string
   title: string
   timeLimitSeconds: number
+  breakAfterSeconds?: number
   questions: Array<PublicQuestion>
 }
 

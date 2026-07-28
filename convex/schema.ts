@@ -55,7 +55,14 @@ export default defineSchema({
      */
     moduleExpiresAt: v.optional(v.number()),
     /*
-     * All four are optional because attempts created before timing existed
+     * Set while the student is on the mandatory break between sections, and
+     * cleared when it ends. `currentModuleIndex` already points at the section
+     * waiting on the other side, so this is what keeps its questions out of
+     * reach until the break is actually over.
+     */
+    breakEndsAt: v.optional(v.number()),
+    /*
+     * All five are optional because attempts created before timing existed
      * have none of them. Those rows read as "untimed": no countdown, no
      * auto-advance — degraded, but not broken.
      */

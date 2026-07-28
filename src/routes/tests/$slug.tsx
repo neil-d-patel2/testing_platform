@@ -7,12 +7,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Coffee,
   ImageOff,
   LayoutGrid,
   Lock,
   TriangleAlert,
 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 
 import RichText from '#/components/RichText.tsx'
 import { api } from '../../../convex/_generated/api'
@@ -136,6 +137,16 @@ function TestPage() {
 
   if (attempt === null || (attempt.status === 'submitted' && retake)) {
     return <Instructions slug={slug} test={test} isRetake={attempt !== null} />
+  }
+
+  /*
+   * `breakEndsAt` is cleared server-side when the break elapses, so this is a
+   * plain read of a flag rather than a clock comparison — no chance of
+   * rendering the questions for a frame before deciding the student is
+   * actually on a break.
+   */
+  if (attempt.status !== 'submitted' && attempt.breakEndsAt !== undefined) {
+    return <BreakScreen test={test} attempt={attempt} />
   }
 
   return <AttemptRunner test={test} attempt={attempt} />
@@ -263,19 +274,31 @@ function Instructions({
         </h2>
         <ol className="mt-4 divide-y divide-neutral-200 border-y border-neutral-200">
           {test.modules.map((module, index) => (
-            <li
-              key={module.id}
-              className="flex items-baseline justify-between gap-4 py-3"
-            >
-              <span className="text-[15px]">
-                <span className="mr-2 text-neutral-500">{index + 1}.</span>
-                {module.title}
-              </span>
-              <span className="shrink-0 text-sm text-neutral-600">
-                {module.questions.length} questions ·{' '}
-                {formatDuration(moduleSeconds(module.timeLimitSeconds, option))}
-              </span>
-            </li>
+            <Fragment key={module.id}>
+              <li className="flex items-baseline justify-between gap-4 py-3">
+                <span className="text-[15px]">
+                  <span className="mr-2 text-neutral-500">{index + 1}.</span>
+                  {module.title}
+                </span>
+                <span className="shrink-0 text-sm text-neutral-600">
+                  {module.questions.length} questions ·{' '}
+                  {formatDuration(
+                    moduleSeconds(module.timeLimitSeconds, option),
+                  )}
+                </span>
+              </li>
+              {module.breakAfterSeconds ? (
+                <li className="flex items-baseline justify-between gap-4 bg-neutral-50 py-3 text-neutral-600">
+                  <span className="flex items-center gap-2 text-[15px]">
+                    <Coffee size={15} aria-hidden="true" />
+                    Break
+                  </span>
+                  <span className="shrink-0 text-sm">
+                    {formatDuration(module.breakAfterSeconds)} · mandatory
+                  </span>
+                </li>
+              ) : null}
+            </Fragment>
           ))}
         </ol>
         <p className="mt-3 text-sm text-neutral-600">
@@ -296,6 +319,10 @@ function Instructions({
           <li>
             Sections run in order. Once one ends you cannot go back to it, but
             within a section you can move between questions freely.
+          </li>
+          <li>
+            The break is mandatory and cannot be skipped or shortened. The
+            section after it starts on time on its own.
           </li>
           <li>Answers save as you go — a refresh will not lose them.</li>
         </ul>
@@ -325,6 +352,72 @@ function Instructions({
         </p>
       </main>
     </div>
+  )
+}
+
+/**
+ * The mandatory break between sections.
+ *
+ * There is no skip button on purpose — the break is part of the exam, and the
+ * next section's clock was fixed the moment the break began, so cutting it
+ * short would buy nothing but a shorter rest.
+ */
+function BreakScreen({
+  test,
+  attempt,
+}: {
+  test: PublicTest
+  attempt: ActiveAttempt
+}) {
+  const endBreak = useMutation(api.attempts.endBreak)
+  const attemptId = attempt.attemptId
+
+  const onDone = useCallback(() => {
+    // A scheduled job on the server does this too. Calling it from here as
+    // well makes the hand-off immediate rather than waiting on that job.
+    void endBreak({ attemptId }).catch(() => {})
+  }, [endBreak, attemptId])
+
+  const remaining = useCountdown(attempt.breakEndsAt, onDone)
+  const nextModule =
+    test.modules[Math.min(attempt.currentModuleIndex, test.modules.length - 1)]
+  const over = remaining !== null && remaining <= 0
+
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center text-black">
+      <p className="text-sm font-medium tracking-wide text-neutral-600 uppercase">
+        Break
+      </p>
+
+      <p
+        role="timer"
+        aria-live="off"
+        className="font-display mt-4 text-7xl font-semibold tabular-nums"
+      >
+        <span className="sr-only">Time left in your break: </span>
+        {remaining === null ? '—' : formatClock(remaining)}
+      </p>
+
+      <p className="mt-6 max-w-md text-[15px] leading-relaxed text-neutral-700">
+        {over ? (
+          <>Starting {nextModule.title}…</>
+        ) : (
+          <>
+            Your test resumes automatically with{' '}
+            <strong className="font-semibold text-black">
+              {nextModule.title}
+            </strong>
+            . You can leave this screen — the break runs on its own and cannot
+            be shortened.
+          </>
+        )}
+      </p>
+
+      <p className="mt-8 max-w-md text-sm leading-relaxed text-neutral-500">
+        Don&rsquo;t close this tab if you can help it. The section after the
+        break starts on time whether or not it&rsquo;s open.
+      </p>
+    </main>
   )
 }
 
@@ -824,6 +917,9 @@ function AttemptRunner({
               : `All ${currentModule.questions.length} questions are answered.`}{' '}
             You won’t be able to come back to this section, and the time left in
             it is not carried over.
+            {currentModule.breakAfterSeconds
+              ? ` A ${formatDuration(currentModule.breakAfterSeconds)} break follows.`
+              : ''}
           </p>
           <div className="ml-auto flex gap-2">
             <button

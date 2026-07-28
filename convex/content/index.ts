@@ -99,6 +99,7 @@ function stripModule(module: Test['modules'][number]): PublicModule {
     id: module.id,
     title: module.title,
     timeLimitSeconds: module.timeLimitSeconds,
+    breakAfterSeconds: module.breakAfterSeconds,
     questions: module.questions.map(stripAnswers),
   }
 }

@@ -5,6 +5,8 @@ export const readingWriting2: TestModule = {
   id: 'rw-2',
   title: 'Reading and Writing — Module 2',
   timeLimitSeconds: 32 * 60,
+  // The break between Reading and Writing and Math, as on the real exam.
+  breakAfterSeconds: 10 * 60,
   questions: [
     {
       type: 'multiple-choice',
