@@ -96,6 +96,29 @@ optional and backfill.
 **`grep` treats the built HTML as binary** and silently matches nothing. Use
 Python or `rg -a` when inspecting SSR output.
 
+**The exam timer lives on the attempt row, not in React.** `moduleExpiresAt`
+and `breakEndsAt` are absolute instants written by Convex; the countdown in
+`$slug.tsx` is a rendering of them and decides nothing. Two rules follow:
+
+- Never compute "seconds remaining" in a query. Queries aren't rerun because
+  time passed, so the number would be frozen at whatever the cache last saw —
+  hand the client the instant and let it tick.
+- Every write path re-derives which module a question is in and refuses it if
+  that section is closed, out of time, or behind a break. A client that skips
+  the break screen still can't answer.
+
+Deadlines are enforced by mutations **scheduled at the deadline**
+(`expireModule`, `finishBreak`), which is what makes closing the tab not pause
+the test. They chain, so an abandoned attempt auto-submits on its own. All of
+them re-check state and no-op if the attempt already moved on, because a
+student finishing early leaves a booked job that still fires.
+
+**`convex/timing.ts` is imported by `src/` on purpose.** It's the one module
+under `convex/` outside `_generated` that may be — multipliers and formatting,
+no question data. The ban is on `convex/content/`, which carries the answer
+key. Check the built bundle if in doubt:
+`python3 -c "..." ` over `.output/public` (see the `grep` note above).
+
 ## UI conventions
 
 - shadcn: `new-york`, base color `zinc`, components in `src/components/ui/`,
@@ -109,7 +132,9 @@ Python or `rg -a` when inspecting SSR output.
 - **The test runner is light, the rest of the app is dark.** `/tests/$slug` is
   deliberately white background / black text — it's a reading surface, and the
   cinematic dark treatment fights an hour of passage reading. Don't "unify" it
-  with the landing page.
+  with the landing page. The screens around it — instructions, break,
+  submitted, `/tests/$slug/report` — are light for the same reason, and so
+  that starting a test isn't a flash from black to white.
 - **Type: Inter for everything, Plus Jakarta Sans for display.** Both are
   `@theme` tokens in `src/styles.css` — `font-sans` (already on `<body>`, so
   it's the default) and `font-display`. Use the `font-display` utility on

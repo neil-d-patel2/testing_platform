@@ -85,6 +85,9 @@ in the same order.
 
 ## Timing must be server-authoritative
 
+**Built.** See `convex/timing.ts` and the timing half of `convex/attempts.ts`;
+what follows is the rule it implements.
+
 A countdown in React is a decoration. A student can pause JS, edit state, or
 reload. The server decides.
 
@@ -97,13 +100,30 @@ reload. The server decides.
   the leftover time.
 - Advancing a module is one-way. No going back to a finished module.
 - Within the active module the student can move freely between questions, change
-  answers, and flag questions for review.
+  answers, and flag questions for review. (Flagging is still to do.)
 - A reload mid-test resumes exactly where they were, with the correct time
   remaining. Do not lose answers on refresh — save each answer as it changes.
 
+Two things the build added on top of this:
+
+- **A job scheduled at the deadline** (`expireModule`) closes the module out,
+  so a closed browser doesn't pause the test. It chains: walk away for three
+  hours and the attempt auto-submits on its own.
+- **Time accommodations.** Students pick standard / 50% / 100% extended on the
+  instructions screen, which scales each module's limit and is fixed for the
+  sitting. Extended time never scales a break.
+
 ## Data model
 
-Add to `convex/schema.ts`:
+What shipped in `convex/schema.ts` follows this closely, with three
+differences: every timing field is `v.optional` (a required one would have
+rejected the rows already in the table), `timeOption` and `breakEndsAt` were
+added for accommodations and the break, and there is no `score` column —
+`attempts.report` grades on read, so a key added later re-scores old attempts
+instead of leaving them stamped with a score from before it existed. `flagged`
+on `answers` is not built yet.
+
+The original sketch:
 
 ```ts
 attempts: defineTable({
@@ -146,13 +166,18 @@ identity.subject`. A client can post any `_id`; filtering in a `list` query is
 
 ## Routes
 
-| Route                  | What it does                                                                            |
-| ---------------------- | --------------------------------------------------------------------------------------- |
-| `/` (exists)           | Landing page. Signed-in users get a CTA into `/tests`.                                  |
-| `/tests`               | Auth-gated. Lists tests with per-test status: not started / in progress / a past score. |
-| `/tests/$slug`         | Pre-test screen: title, module count, total time, rules. "Begin" starts the attempt.    |
-| `/tests/$slug/attempt` | The test itself. One question at a time, timer, palette, flags.                         |
-| `/tests/$slug/review`  | Post-submit: score, per-question correct/incorrect, explanations.                       |
+Built as four screens behind two routes rather than the five below: `/tests/
+$slug` is a single route that shows the instructions, the running test, the
+break, or the "submitted" screen depending on the attempt's state, and the
+review lives at `/tests/$slug/report`.
+
+| Route                 | What it does                                                                                           |
+| --------------------- | ------------------------------------------------------------------------------------------------------ |
+| `/`                   | Landing page. Signed-in users get a CTA into `/tests`.                                                 |
+| `/tests`              | Auth-gated. Lists tests with per-test status: not started / in progress / submitted.                   |
+| `/tests/$slug`        | Instructions and time choice → the test → the break → submitted. `?retake=1` reopens the instructions. |
+| `/tests/$slug/report` | Post-submit: score (or "not scored"), per-section and per-question breakdown, explanations.            |
+| `/tutor`              | Password-gated, checked server-side. Every student's attempt, with responses beside the key.           |
 
 Auth-gate in the route's `beforeLoad` using the `userId` already on the root
 route context — redirect to `/sign-in` when absent. Don't gate with `Show`
@@ -163,9 +188,11 @@ the signed-in branch renders nothing.
 
 ## Test-taking UI
 
-Dark, focused, distraction-free — it should feel like the real thing. Reuse the
-existing `.liquid-glass` treatment and `font-display` headings so it matches
-the landing page.
+Focused and distraction-free — it should feel like the real thing.
+
+**This asked for dark, and it was built light.** An hour of passage reading on
+a black background is punishing, and Bluebook itself is light. The rest of the
+app stays dark; see the note in `CLAUDE.md` before "unifying" them.
 
 - Timer top-right. Turns amber under 5 minutes, red under 1. No flashing.
 - Question palette showing answered / unanswered / flagged at a glance, plus
@@ -182,16 +209,18 @@ Ship these as separate reviewable steps, each ending green on
 1. ~~**Content layer**~~ — **done.** SAT Practice Test 1 is transcribed in
    `convex/content/tests/satPracticeTest1/`: 98 questions across four modules.
    **Missing its answer key** — see below.
-2. ~~**Schema + Convex functions**~~ — **mostly done.** `attempts` + `answers`
-   tables; `attempts.{start,getActive,saveAnswer,clearAnswer,submit}`;
-   `tests.get` serves the stripped test. Still missing: per-module advance and
-   the post-submit review query, both of which depend on timing and scoring.
-3. ~~**`/tests` list**~~ — **done** and auth-gated. No separate pre-test screen:
-   clicking a test goes straight into the runner.
-4. **The attempt runner** — **partly done.** `/tests/$slug` renders questions,
-   records answers, autosaves, and resumes. Still missing: the timer, per-module
-   locking (all four modules are freely navigable), and question flagging.
-5. **The review screen** — blocked on the answer key.
+2. ~~**Schema + Convex functions**~~ — **done.** `attempts` + `answers` tables;
+   `attempts.{start,retake,getActive,saveAnswer,clearAnswer,advanceModule,
+endBreak,submit,report}` plus the scheduled `expireModule` / `finishBreak`;
+   `tests.get` serves the stripped test.
+3. ~~**`/tests` list**~~ — **done** and auth-gated.
+4. ~~**The attempt runner**~~ — **done**, bar flagging. Instructions screen with
+   a time choice, a server-enforced per-section timer that auto-submits, the
+   mandatory break, sections locked in order, and submit on the last question.
+   **Question flagging is the one thing here still to build.**
+5. ~~**The review screen**~~ — **done** at `/tests/$slug/report`, and reports
+   "not scored" until a key exists. Grading is written and unexercised: the
+   moment a `correctAnswer` lands in the content it starts marking.
 6. **Cleanup** — delete `todos` from the schema, `convex/todos.ts`, and their
    README references once nothing depends on them.
 
@@ -202,8 +231,10 @@ The source document contained questions and choices only — no correct answers.
 and every question in Practice Test 1 omits them. Consequences:
 
 - Nothing can be scored. `submit` marks the attempt finished and writes no score.
-- Scoring, when it lands, must treat a missing key as **"not gradable"**, never
-  as "wrong" — otherwise a keyless test silently reports 0/98.
+- Scoring treats a missing key as **"not gradable"**, never as "wrong" —
+  otherwise a keyless test silently reports 0/98. `attempts.report` grades to
+  `null` per question and the report screen says "Not scored". Filling in the
+  key is the only thing needed to turn that into a real score.
 
 Eight questions also reference a figure the document marked "pending insertion"
 (a graph, five diagrams, two tables). They carry a `figureNote` and render a
@@ -213,10 +244,16 @@ broken. Both gaps are filled by editing the content files — no schema change.
 ## Open questions for the tutor
 
 1. Where is the answer key for Practice Test 1, and the eight missing figures?
-2. Should a student be able to retake a test? Right now `start` returns the
-   existing attempt forever, so there is exactly one attempt per student per
-   test and no way to begin a fresh one.
-3. Once timing lands, should the four modules lock in order? They are currently
-   all freely navigable.
-4. Do you want to see your students' results, or is this student-facing only?
-   (A tutor dashboard is real scope — out of the flow above.)
+   This is the only thing standing between the report screen and a real score.
+2. ~~Should a student be able to retake a test?~~ **Yes** — `attempts.retake`
+   opens a fresh attempt and keeps the old one, since the tutor may not have
+   looked at it yet.
+3. ~~Should the four modules lock in order?~~ **Yes** — one-way, with a
+   mandatory ten-minute break between Reading and Writing and Math.
+4. ~~Do you want to see your students' results?~~ **Yes** — `/tutor`, behind a
+   shared password checked server-side.
+5. Who decides a student's time accommodation? Right now the student picks it
+   themselves each sitting, on the honour system. If it needs to be assigned by
+   the tutor, that's a per-student setting and a new table.
+6. Should the report show a scaled 400–1600 score once a key exists? Still
+   blocked on the tutor's curves — see "Store the score as raw correct/total".

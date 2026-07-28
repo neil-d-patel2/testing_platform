@@ -69,8 +69,9 @@ export type Question = MultipleChoiceQuestion | GridInQuestion
  * A timed section. Time is per-module: finishing early does not bank the
  * leftover time for the next one.
  *
- * `timeLimitSeconds` is recorded from the official SAT section lengths but is
- * **not yet enforced** — the attempt runner ignores it. See `SPEC.md`.
+ * `timeLimitSeconds` is the standard-time length, taken from the official SAT
+ * sections. It is scaled by the student's accommodation (`convex/timing.ts`)
+ * into the deadline `convex/attempts.ts` enforces.
  */
 export interface TestModule {
   id: string
