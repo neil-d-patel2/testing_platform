@@ -1,0 +1,302 @@
+import { convexQuery } from '@convex-dev/react-query'
+import { useQuery } from '@tanstack/react-query'
+import { Link, createFileRoute, redirect } from '@tanstack/react-router'
+import { Check, Minus, X } from 'lucide-react'
+
+import RichText from '#/components/RichText.tsx'
+import { CHOICE_LABELS, FOCUS_RING, formatDuration } from '#/lib/exam-ui.ts'
+import { api } from '../../../convex/_generated/api'
+import { TIME_OPTION_LABELS } from '../../../convex/timing'
+import type { FunctionReturnType } from 'convex/server'
+
+export const Route = createFileRoute('/tests/$slug_/report')({
+  beforeLoad: ({ context }) => {
+    if (!context.userId) {
+      throw redirect({ to: '/sign-in/$', params: { _splat: '' } })
+    }
+  },
+  component: ReportPage,
+})
+
+type Report = NonNullable<FunctionReturnType<typeof api.attempts.report>>
+type ReportQuestion = Report['modules'][number]['questions'][number]
+
+/**
+ * A response in the form a student reads it: the letter and the choice text
+ * for multiple choice, the raw text for a grid-in.
+ */
+function answerText(question: ReportQuestion, value: string | null) {
+  if (value === null) return null
+
+  if (question.type === 'multiple-choice' && question.choices) {
+    // Stored answers are choice indices, but the value is just a string in the
+    // table — an index from an older version of a question could be past the
+    // end of today's choices, so show it raw rather than rendering `undefined`.
+    const index = Number(value)
+    if (
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= question.choices.length
+    ) {
+      return value
+    }
+    return `${CHOICE_LABELS[index]}. ${question.choices[index]}`
+  }
+
+  return value
+}
+
+function ReportPage() {
+  const { slug } = Route.useParams()
+  const { data: report } = useQuery(
+    convexQuery(api.attempts.report, { testSlug: slug }),
+  )
+
+  if (report === undefined) {
+    return <Shell title="Score report">Loading…</Shell>
+  }
+
+  if (report === null) {
+    return (
+      <Shell title="Score report">
+        You haven&rsquo;t taken this test yet.{' '}
+        <Link
+          to="/tests"
+          className={`rounded font-medium text-black underline ${FOCUS_RING}`}
+        >
+          Back to all tests
+        </Link>
+      </Shell>
+    )
+  }
+
+  if (report.status !== 'submitted') {
+    return (
+      <Shell title={report.testTitle}>
+        This test is still in progress — the report is written when you submit.{' '}
+        <Link
+          to="/tests/$slug"
+          params={{ slug }}
+          className={`rounded font-medium text-black underline ${FOCUS_RING}`}
+        >
+          Return to the test
+        </Link>
+      </Shell>
+    )
+  }
+
+  const elapsed =
+    report.submittedAt === undefined
+      ? null
+      : (report.submittedAt - report.startedAt) / 1000
+
+  return (
+    <div className="min-h-screen bg-white text-black">
+      <main className="mx-auto max-w-3xl px-6 py-12">
+        <Link
+          to="/tests"
+          className={`rounded text-sm text-neutral-600 transition-colors hover:text-black ${FOCUS_RING}`}
+        >
+          ← All tests
+        </Link>
+
+        <h1 className="font-display mt-4 text-3xl font-semibold tracking-tight">
+          Score report
+        </h1>
+        <p className="mt-2 text-[15px] text-neutral-600">
+          {report.testTitle}
+          {report.submittedAt
+            ? ` · submitted ${new Date(report.submittedAt).toLocaleString()}`
+            : ''}
+        </p>
+
+        <section
+          aria-label="Summary"
+          className="mt-8 rounded-2xl border border-neutral-300 px-6 py-6"
+        >
+          {report.graded === 0 ? (
+            /*
+              Practice Test 1 was transcribed without its answer key. Reporting
+              a score of zero would read as 98 wrong answers, so the screen says
+              plainly that there is nothing to mark against.
+            */
+            <>
+              <p className="font-display text-2xl font-semibold">Not scored</p>
+              <p className="mt-2 text-[15px] leading-relaxed text-neutral-700">
+                This test doesn&rsquo;t have an answer key yet, so none of these
+                questions can be marked right or wrong. Your responses are
+                saved, and your tutor can see them.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-display text-4xl font-semibold tabular-nums">
+                {report.correct}
+                <span className="text-neutral-400"> / {report.graded}</span>
+              </p>
+              <p className="mt-2 text-[15px] text-neutral-700">
+                correct on the {report.graded} questions with an answer key.
+              </p>
+            </>
+          )}
+
+          <dl className="mt-6 grid grid-cols-2 gap-4 border-t border-neutral-200 pt-5 text-sm sm:grid-cols-3">
+            <div>
+              <dt className="text-neutral-600">Answered</dt>
+              <dd className="mt-0.5 font-medium tabular-nums">
+                {report.answered} of {report.total}
+              </dd>
+            </div>
+            {elapsed !== null ? (
+              <div>
+                <dt className="text-neutral-600">Time taken</dt>
+                <dd className="mt-0.5 font-medium">
+                  {formatDuration(elapsed)}
+                </dd>
+              </div>
+            ) : null}
+            {report.timeOption ? (
+              <div>
+                <dt className="text-neutral-600">Timing</dt>
+                <dd className="mt-0.5 font-medium">
+                  {TIME_OPTION_LABELS[report.timeOption]}
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+        </section>
+
+        <h2 className="font-display mt-12 text-lg font-semibold">By section</h2>
+        <ul className="mt-4 divide-y divide-neutral-200 border-y border-neutral-200">
+          {report.modules.map((module) => (
+            <li
+              key={module.id}
+              className="flex items-baseline justify-between gap-4 py-3"
+            >
+              <span className="text-[15px]">{module.title}</span>
+              <span className="shrink-0 text-sm tabular-nums text-neutral-600">
+                {module.answered} of {module.total} answered
+                {module.graded > 0
+                  ? ` · ${module.correct} of ${module.graded} correct`
+                  : ''}
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        <h2 className="font-display mt-12 text-lg font-semibold">
+          Your answers
+        </h2>
+        {report.modules.map((module) => (
+          <section key={module.id} className="mt-8">
+            <h3 className="text-sm font-semibold tracking-wide text-neutral-600 uppercase">
+              {module.title}
+            </h3>
+            <ol className="mt-3 divide-y divide-neutral-200 border-y border-neutral-200">
+              {module.questions.map((question) => (
+                <li key={question.id} className="flex gap-4 py-4">
+                  <Verdict isCorrect={question.isCorrect} />
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-neutral-600">
+                      Question {question.number}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-[15px] leading-relaxed text-neutral-800">
+                      <RichText text={question.prompt} />
+                    </p>
+
+                    <p className="mt-2 text-[15px]">
+                      <span className="text-neutral-600">Your answer: </span>
+                      {question.yourAnswer === null ? (
+                        <span className="text-neutral-500 italic">
+                          not answered
+                        </span>
+                      ) : (
+                        answerText(question, question.yourAnswer)
+                      )}
+                    </p>
+
+                    {question.correctAnswer !== null ? (
+                      <p className="mt-1 text-[15px]">
+                        <span className="text-neutral-600">Correct: </span>
+                        {answerText(question, question.correctAnswer)}
+                      </p>
+                    ) : null}
+
+                    {question.explanation ? (
+                      <p className="mt-2 text-sm leading-relaxed text-neutral-700">
+                        <RichText text={question.explanation} />
+                      </p>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ))}
+
+        <div className="mt-12 flex flex-wrap gap-3">
+          <Link
+            to="/tests"
+            className={`rounded-full bg-black px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-80 ${FOCUS_RING}`}
+          >
+            Back to all tests
+          </Link>
+          <Link
+            to="/tests/$slug"
+            params={{ slug }}
+            search={{ retake: true }}
+            className={`rounded-full border border-neutral-400 px-6 py-3 text-sm font-medium transition-colors hover:bg-neutral-100 ${FOCUS_RING}`}
+          >
+            Take it again
+          </Link>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+/** Right, wrong, or nothing to mark it against. */
+function Verdict({ isCorrect }: { isCorrect: boolean | null }) {
+  if (isCorrect === null) {
+    return (
+      <span
+        title="No answer key for this question"
+        className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border border-neutral-300 text-neutral-400"
+      >
+        <Minus size={14} aria-hidden="true" />
+        <span className="sr-only">Not scored</span>
+      </span>
+    )
+  }
+
+  return isCorrect ? (
+    <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-black text-white">
+      <Check size={14} aria-hidden="true" />
+      <span className="sr-only">Correct</span>
+    </span>
+  ) : (
+    <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border border-neutral-400 text-neutral-700">
+      <X size={14} aria-hidden="true" />
+      <span className="sr-only">Incorrect</span>
+    </span>
+  )
+}
+
+/** Centered one-liner, for the states that have no report to show. */
+function Shell({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center gap-3 bg-white px-6 text-center text-black">
+      <h1 className="font-display text-2xl font-semibold">{title}</h1>
+      <p className="max-w-md text-sm leading-relaxed text-neutral-600">
+        {children}
+      </p>
+    </main>
+  )
+}

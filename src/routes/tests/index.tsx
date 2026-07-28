@@ -134,11 +134,11 @@ function TestsPage() {
                           answered
                         </span>
                         <Link
-                          to="/tests/$slug"
+                          to="/tests/$slug/report"
                           params={{ slug: test.slug }}
                           className="ml-auto rounded-full border border-white/40 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none"
                         >
-                          View submission
+                          Score report
                         </Link>
                         {/*
                           Retake doesn't start anything from here — it opens

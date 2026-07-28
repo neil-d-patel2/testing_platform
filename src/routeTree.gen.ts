@@ -15,6 +15,7 @@ import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
 import { Route as SignUpSplatRouteImport } from './routes/sign-up.$'
 import { Route as TestsIndexRouteImport } from './routes/tests/index'
 import { Route as TestsSlugRouteImport } from './routes/tests/$slug'
+import { Route as TestsSlugReportRouteImport } from './routes/tests/$slug_.report'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +47,11 @@ const TestsSlugRoute = TestsSlugRouteImport.update({
   path: '/tests/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TestsSlugReportRoute = TestsSlugReportRouteImport.update({
+  id: '/tests/$slug_/report',
+  path: '/tests/$slug/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/sign-up/$': typeof SignUpSplatRoute
   '/tests/$slug': typeof TestsSlugRoute
   '/tests/': typeof TestsIndexRoute
+  '/tests/$slug/report': typeof TestsSlugReportRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/sign-up/$': typeof SignUpSplatRoute
   '/tests/$slug': typeof TestsSlugRoute
   '/tests': typeof TestsIndexRoute
+  '/tests/$slug/report': typeof TestsSlugReportRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,13 +79,27 @@ export interface FileRoutesById {
   '/sign-up/$': typeof SignUpSplatRoute
   '/tests/$slug': typeof TestsSlugRoute
   '/tests/': typeof TestsIndexRoute
+  '/tests/$slug_/report': typeof TestsSlugReportRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/tutor' | '/sign-in/$' | '/sign-up/$' | '/tests/$slug' | '/tests/'
+    | '/'
+    | '/tutor'
+    | '/sign-in/$'
+    | '/sign-up/$'
+    | '/tests/$slug'
+    | '/tests/'
+    | '/tests/$slug/report'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/tutor' | '/sign-in/$' | '/sign-up/$' | '/tests/$slug' | '/tests'
+  to:
+    | '/'
+    | '/tutor'
+    | '/sign-in/$'
+    | '/sign-up/$'
+    | '/tests/$slug'
+    | '/tests'
+    | '/tests/$slug/report'
   id:
     | '__root__'
     | '/'
@@ -86,6 +108,7 @@ export interface FileRouteTypes {
     | '/sign-up/$'
     | '/tests/$slug'
     | '/tests/'
+    | '/tests/$slug_/report'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -95,6 +118,7 @@ export interface RootRouteChildren {
   SignUpSplatRoute: typeof SignUpSplatRoute
   TestsSlugRoute: typeof TestsSlugRoute
   TestsIndexRoute: typeof TestsIndexRoute
+  TestsSlugReportRoute: typeof TestsSlugReportRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -141,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TestsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tests/$slug_/report': {
+      id: '/tests/$slug_/report'
+      path: '/tests/$slug/report'
+      fullPath: '/tests/$slug/report'
+      preLoaderRoute: typeof TestsSlugReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -151,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignUpSplatRoute: SignUpSplatRoute,
   TestsSlugRoute: TestsSlugRoute,
   TestsIndexRoute: TestsIndexRoute,
+  TestsSlugReportRoute: TestsSlugReportRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

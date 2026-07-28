@@ -5,7 +5,7 @@ import { getTest } from './content'
 import { asTimeOption, moduleSeconds } from './timing'
 import type { Doc, Id } from './_generated/dataModel'
 import type { MutationCtx, QueryCtx } from './_generated/server'
-import type { Test } from './content/types'
+import type { Question, Test } from './content/types'
 import type { TimeOption } from './timing'
 
 /** Argument/field validator for the time accommodation. */
@@ -252,6 +252,126 @@ export const getActive = query({
     }
   },
 })
+
+/**
+ * The caller's latest attempt, marked against the answer key.
+ *
+ * Grading happens here rather than in the browser because the key is the one
+ * thing that must never be bundled into the client. The key and explanations
+ * are only attached once `status` is `submitted` — before that this returns
+ * the shell of a report and nothing else, so a student can't read the answers
+ * out of a network response mid-test.
+ *
+ * A question with no key grades to `null`, not `false`. Practice Test 1 has no
+ * key at all, and reporting 0 out of 98 would be a lie about the student's
+ * work rather than a gap in the content.
+ */
+export const report = query({
+  args: { testSlug: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return null
+
+    const attempt = await ctx.db
+      .query('attempts')
+      .withIndex('by_user_and_test', (q) =>
+        q.eq('userId', identity.subject).eq('testSlug', args.testSlug),
+      )
+      .order('desc')
+      .first()
+
+    if (!attempt) return null
+
+    const test = getTest(attempt.testSlug)
+    if (!test) return null
+
+    const rows = await ctx.db
+      .query('answers')
+      .withIndex('by_attempt', (q) => q.eq('attemptId', attempt._id))
+      .collect()
+    const byQuestion = new Map(rows.map((a) => [a.questionId, a.value]))
+
+    const released = attempt.status === 'submitted'
+
+    const modules = test.modules.map((module) => {
+      const questions = module.questions.map((question, index) => {
+        const yourAnswer = byQuestion.get(question.id) ?? null
+        const isCorrect = released ? grade(question, yourAnswer) : null
+
+        return {
+          id: question.id,
+          number: index + 1,
+          prompt: question.prompt,
+          type: question.type,
+          choices:
+            question.type === 'multiple-choice' ? question.choices : undefined,
+          yourAnswer,
+          correctAnswer: released ? displayKey(question) : null,
+          isCorrect,
+          explanation: released ? question.explanation : undefined,
+        }
+      })
+
+      return {
+        id: module.id,
+        title: module.title,
+        total: questions.length,
+        answered: questions.filter((q) => q.yourAnswer !== null).length,
+        correct: questions.filter((q) => q.isCorrect === true).length,
+        graded: questions.filter((q) => q.isCorrect !== null).length,
+        questions,
+      }
+    })
+
+    return {
+      status: attempt.status,
+      testSlug: test.slug,
+      testTitle: test.title,
+      timeOption: attempt.timeOption,
+      startedAt: attempt.startedAt,
+      submittedAt: attempt.submittedAt,
+      total: modules.reduce((n, m) => n + m.total, 0),
+      answered: modules.reduce((n, m) => n + m.answered, 0),
+      correct: modules.reduce((n, m) => n + m.correct, 0),
+      // Zero here is the "no answer key supplied" state the whole screen
+      // hinges on, not a score of zero.
+      graded: modules.reduce((n, m) => n + m.graded, 0),
+      modules,
+    }
+  },
+})
+
+/**
+ * Whether a response is right: `null` when the question carries no key, which
+ * is not the same as wrong.
+ */
+function grade(question: Question, response: string | null): boolean | null {
+  if (question.type === 'multiple-choice') {
+    if (question.correctAnswer === undefined) return null
+    return response !== null && Number(response) === question.correctAnswer
+  }
+
+  const accepted = question.acceptedAnswers
+  if (!accepted || accepted.length === 0) return null
+  if (response === null) return false
+
+  // Grid-ins are compared as trimmed, case-insensitive strings — every
+  // spelling that counts has to be listed in `acceptedAnswers`.
+  const normalized = response.trim().toLowerCase()
+  return accepted.some((value) => value.trim().toLowerCase() === normalized)
+}
+
+/** The key in the same shape a stored answer takes, or `null` if unsupplied. */
+function displayKey(question: Question): string | null {
+  if (question.type === 'multiple-choice') {
+    return question.correctAnswer === undefined
+      ? null
+      : String(question.correctAnswer)
+  }
+  return question.acceptedAnswers?.length
+    ? question.acceptedAnswers.join(' or ')
+    : null
+}
 
 /**
  * Starts an attempt, or returns the existing one.

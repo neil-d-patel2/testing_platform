@@ -10,12 +10,17 @@ import {
   Coffee,
   ImageOff,
   LayoutGrid,
-  Lock,
   TriangleAlert,
 } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 
 import RichText from '#/components/RichText.tsx'
+import {
+  CHOICE_LABELS,
+  FOCUS_RING,
+  TAP_TARGET,
+  formatDuration,
+} from '#/lib/exam-ui.ts'
 import { api } from '../../../convex/_generated/api'
 import {
   DEFAULT_TIME_OPTION,
@@ -55,27 +60,6 @@ type ActiveAttempt = NonNullable<
 
 /** How long to wait after the last keystroke before saving a grid-in answer. */
 const TYPING_SAVE_DELAY_MS = 600
-
-const CHOICE_LABELS = ['A', 'B', 'C', 'D', 'E', 'F']
-
-/**
- * Shared focus treatment. Every interactive element gets one — a keyboard user
- * taking a 98-question exam has no other way to tell where they are.
- */
-const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2'
-
-/** 44px minimum touch target, per WCAG 2.5.5 / platform guidance. */
-const TAP_TARGET = 'min-h-11'
-
-function formatDuration(totalSeconds: number) {
-  const minutes = Math.round(totalSeconds / 60)
-  if (minutes < 60) return `${minutes} min`
-
-  const hours = Math.floor(minutes / 60)
-  const remainder = minutes % 60
-  return remainder === 0 ? `${hours} hr` : `${hours} hr ${remainder} min`
-}
 
 /** `M:SS`, the shape a countdown is read at a glance. */
 function formatClock(ms: number) {
@@ -139,13 +123,17 @@ function TestPage() {
     return <Instructions slug={slug} test={test} isRetake={attempt !== null} />
   }
 
+  if (attempt.status === 'submitted') {
+    return <Submitted slug={slug} attempt={attempt} />
+  }
+
   /*
    * `breakEndsAt` is cleared server-side when the break elapses, so this is a
    * plain read of a flag rather than a clock comparison — no chance of
    * rendering the questions for a frame before deciding the student is
    * actually on a break.
    */
-  if (attempt.status !== 'submitted' && attempt.breakEndsAt !== undefined) {
+  if (attempt.breakEndsAt !== undefined) {
     return <BreakScreen test={test} attempt={attempt} />
   }
 
@@ -356,6 +344,59 @@ function Instructions({
 }
 
 /**
+ * Where a finished test lands.
+ *
+ * A screen rather than a button that relabels itself: "Submitted" appearing
+ * where "Submit" was is easy to miss, and after two hours of work the student
+ * deserves an unambiguous full stop.
+ */
+function Submitted({
+  slug,
+  attempt,
+}: {
+  slug: string
+  attempt: ActiveAttempt
+}) {
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center text-black">
+      <span
+        aria-hidden="true"
+        className="flex size-14 items-center justify-center rounded-full bg-black text-white"
+      >
+        <Check size={28} />
+      </span>
+
+      <h1 className="font-display mt-6 text-3xl font-semibold tracking-tight">
+        Test submitted
+      </h1>
+
+      <p className="mt-3 max-w-md text-[15px] leading-relaxed text-neutral-600">
+        Your answers are in and locked
+        {attempt.submittedAt
+          ? `, as of ${new Date(attempt.submittedAt).toLocaleString()}`
+          : ''}
+        . Nothing else is needed from you.
+      </p>
+
+      <Link
+        to="/tests/$slug/report"
+        params={{ slug }}
+        className={`mt-8 rounded-full bg-black px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-80 ${TAP_TARGET} ${FOCUS_RING}`}
+      >
+        See score report
+      </Link>
+
+      <Link
+        to="/tests"
+        className={`mt-4 rounded px-2 py-1 text-sm text-neutral-600 underline transition-colors hover:text-black ${FOCUS_RING}`}
+      >
+        Back to all tests
+      </Link>
+    </main>
+  )
+}
+
+/**
  * The mandatory break between sections.
  *
  * There is no skip button on purpose — the break is part of the exam, and the
@@ -492,7 +533,6 @@ function AttemptRunner({
   const pending = useRef<Record<string, string>>({})
 
   const attemptId: Id<'attempts'> = attempt.attemptId
-  const isSubmitted = attempt.status === 'submitted'
 
   // The server owns which module is open; this is a read of that, not a
   // preference. Clamped because content can be edited under a live attempt.
@@ -592,10 +632,7 @@ function AttemptRunner({
     })
   }, [advanceModule, attemptId, flushAll, moduleIndex])
 
-  const remaining = useCountdown(
-    isSubmitted ? undefined : attempt.moduleExpiresAt,
-    endModule,
-  )
+  const remaining = useCountdown(attempt.moduleExpiresAt, endModule)
 
   const question = currentModule.questions[questionIndex]
   const answers = { ...attempt.answers, ...draft }
@@ -727,7 +764,7 @@ function AttemptRunner({
             navigation, "3 of 4" screen-reader announcements, and correct
             grouping for free. The input is visually hidden, not removed.
           */}
-          <fieldset className="mt-6" disabled={isSubmitted}>
+          <fieldset className="mt-6">
             <legend className="sr-only">
               Answer choices for question {questionIndex + 1}
             </legend>
@@ -778,7 +815,7 @@ function AttemptRunner({
             Radios can't be unchecked by clicking them again, so clearing needs
             its own control — the previous click-to-toggle-off was invisible.
           */}
-          {value !== '' && !isSubmitted ? (
+          {value !== '' ? (
             <button
               type="button"
               onClick={() => setAnswer(question.id, '')}
@@ -801,7 +838,6 @@ function AttemptRunner({
             type="text"
             inputMode="text"
             autoComplete="off"
-            disabled={isSubmitted}
             value={value}
             onChange={(event) =>
               setAnswer(question.id, event.target.value, true)
@@ -857,24 +893,11 @@ function AttemptRunner({
               {totalAnswered} of {totalQuestions} answered
             </span>
             <Countdown remaining={remaining} />
-            {isSubmitted ? (
-              <span className="flex items-center gap-1.5 rounded-full bg-black px-3 py-1.5 text-sm font-medium text-white">
-                <Check size={14} aria-hidden="true" /> Submitted
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setConfirmingSubmit(true)}
-                className={`rounded-full bg-black px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-80 ${TAP_TARGET} ${FOCUS_RING}`}
-              >
-                Finish test
-              </button>
-            )}
           </div>
         </div>
       </header>
 
-      {confirmingAdvance && !isSubmitted ? (
+      {confirmingAdvance ? (
         <Banner label="Confirm moving on">
           <p className="text-sm text-black">
             <strong className="font-semibold">
@@ -911,7 +934,7 @@ function AttemptRunner({
         </Banner>
       ) : null}
 
-      {confirmingSubmit && !isSubmitted ? (
+      {confirmingSubmit ? (
         <Banner label="Confirm submission">
           <p className="text-sm text-black">
             <strong className="font-semibold">
@@ -943,29 +966,6 @@ function AttemptRunner({
             </button>
           </div>
         </Banner>
-      ) : null}
-
-      {isSubmitted ? (
-        <div className="border-b border-neutral-200 bg-neutral-100">
-          <p className="mx-auto flex max-w-6xl items-start gap-2 px-6 py-3 text-sm text-neutral-700">
-            <Lock size={15} aria-hidden="true" className="mt-0.5 shrink-0" />
-            <span>
-              Submitted
-              {attempt.submittedAt
-                ? ` on ${new Date(attempt.submittedAt).toLocaleString()}`
-                : ''}
-              . Your answers are locked — this is a read-only view of what you
-              turned in. To take it again, use{' '}
-              <Link
-                to="/tests"
-                className={`rounded font-medium text-black underline ${FOCUS_RING}`}
-              >
-                Retake on the tests page
-              </Link>
-              .
-            </span>
-          </p>
-        </div>
       ) : null}
 
       <main className="mx-auto max-w-6xl px-6 pt-8 pb-32">
@@ -1042,15 +1042,30 @@ function AttemptRunner({
             Question {questionIndex + 1} of {currentModule.questions.length}
           </button>
 
-          <button
-            type="button"
-            onClick={goNext}
-            disabled={isLastQuestion && isLastModule}
-            className={`flex items-center gap-1.5 rounded-full border border-neutral-300 px-5 text-sm font-medium transition-colors hover:bg-neutral-100 disabled:opacity-30 disabled:hover:bg-transparent ${TAP_TARGET} ${FOCUS_RING}`}
-          >
-            {isLastQuestion && !isLastModule ? 'Next section' : 'Next'}{' '}
-            <ChevronRight size={16} aria-hidden="true" />
-          </button>
+          {/*
+            Submitting is reachable from exactly one place: the last question
+            of the last section. A permanent header button sat one stray click
+            from ending the test an hour early, and read as "save" to anyone
+            who didn't look twice.
+          */}
+          {isLastQuestion && isLastModule ? (
+            <button
+              type="button"
+              onClick={() => setConfirmingSubmit(true)}
+              className={`flex items-center gap-1.5 rounded-full bg-black px-5 text-sm font-medium text-white transition-opacity hover:opacity-80 ${TAP_TARGET} ${FOCUS_RING}`}
+            >
+              <Check size={16} aria-hidden="true" /> Submit test
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={goNext}
+              className={`flex items-center gap-1.5 rounded-full border border-neutral-300 px-5 text-sm font-medium transition-colors hover:bg-neutral-100 ${TAP_TARGET} ${FOCUS_RING}`}
+            >
+              {isLastQuestion ? 'Next section' : 'Next'}{' '}
+              <ChevronRight size={16} aria-hidden="true" />
+            </button>
+          )}
         </div>
       </div>
     </div>
