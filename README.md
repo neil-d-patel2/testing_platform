@@ -169,9 +169,19 @@ Two things it does **not** do, both required for Convex:
 1. **A JWT template named `convex`** — the name is the `applicationID` in
    [`convex/auth.config.ts`](convex/auth.config.ts):
    ```bash
-   clerk api /jwt_templates -X POST \
-     -d '{"name":"convex","claims":{"aud":"convex"},"lifetime":60}'
+   clerk api /jwt_templates -X POST -d '{
+     "name": "convex",
+     "claims": {
+       "aud": "convex",
+       "name": "{{user.full_name}}",
+       "email": "{{user.primary_email_address}}"
+     },
+     "lifetime": 60
+   }'
    ```
+   The `name` and `email` claims are what make `identity.name` /
+   `identity.email` populated. Without them they are permanently `undefined`,
+   and the tutor grading view can only show raw `user_2abc…` ids.
 2. **The issuer domain on the Convex deployment** (not in `.env.local`):
    ```bash
    npx convex env set CLERK_JWT_ISSUER_DOMAIN https://<slug>.clerk.accounts.dev
@@ -386,3 +396,16 @@ Loaders simplify your data fetching logic dramatically. Check out more informati
 You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
 
 For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+
+### Tutor access
+
+`/tutor` is gated by a shared password checked **server-side** in
+`convex/tutor.ts`, read from the `TUTOR_PASSWORD` Convex environment variable:
+
+```bash
+npx convex env set TUTOR_PASSWORD '<password>'
+```
+
+The check must stay on the server. These queries are reachable over the public
+internet with only the deployment URL, so a password checked in React would
+protect nothing. The functions fail closed when the variable is unset.

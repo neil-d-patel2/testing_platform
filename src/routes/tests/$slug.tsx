@@ -8,6 +8,7 @@ import {
   ChevronRight,
   ImageOff,
   LayoutGrid,
+  Lock,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -58,6 +59,7 @@ function AttemptRunner() {
   const [moduleIndex, setModuleIndex] = useState(0)
   const [questionIndex, setQuestionIndex] = useState(0)
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const [confirmingSubmit, setConfirmingSubmit] = useState(false)
 
   /*
    * Local echo of what the student just did, layered over the server's copy.
@@ -410,7 +412,7 @@ function AttemptRunner() {
             ) : (
               <button
                 type="button"
-                onClick={() => attemptId && void submit({ attemptId })}
+                onClick={() => setConfirmingSubmit(true)}
                 disabled={!attemptId}
                 className={`rounded-full bg-black px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-80 disabled:opacity-40 ${TAP_TARGET} ${FOCUS_RING}`}
               >
@@ -444,6 +446,68 @@ function AttemptRunner() {
           </ul>
         </nav>
       </header>
+
+      {confirmingSubmit && !isSubmitted ? (
+        <div
+          role="alertdialog"
+          aria-label="Confirm submission"
+          className="border-b border-neutral-200 bg-neutral-100"
+        >
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-6 py-4">
+            <p className="text-sm text-black">
+              <strong className="font-semibold">
+                Submit and lock this test?
+              </strong>{' '}
+              {totalQuestions - totalAnswered > 0
+                ? `${totalQuestions - totalAnswered} of ${totalQuestions} questions are unanswered.`
+                : `All ${totalQuestions} questions are answered.`}{' '}
+              You won’t be able to change your answers afterwards.
+            </p>
+            <div className="ml-auto flex gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmingSubmit(false)}
+                className={`rounded-full border border-neutral-400 px-5 text-sm font-medium transition-colors hover:bg-white ${TAP_TARGET} ${FOCUS_RING}`}
+              >
+                Keep working
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (attemptId) void submit({ attemptId })
+                  setConfirmingSubmit(false)
+                }}
+                className={`rounded-full bg-black px-5 text-sm font-medium text-white transition-opacity hover:opacity-80 ${TAP_TARGET} ${FOCUS_RING}`}
+              >
+                Submit test
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isSubmitted ? (
+        <div className="border-b border-neutral-200 bg-neutral-100">
+          <p className="mx-auto flex max-w-6xl items-start gap-2 px-6 py-3 text-sm text-neutral-700">
+            <Lock size={15} aria-hidden="true" className="mt-0.5 shrink-0" />
+            <span>
+              Submitted
+              {attempt.submittedAt
+                ? ` on ${new Date(attempt.submittedAt).toLocaleString()}`
+                : ''}
+              . Your answers are locked — this is a read-only view of what you
+              turned in. To take it again, use{' '}
+              <Link
+                to="/tests"
+                className={`rounded font-medium text-black underline ${FOCUS_RING}`}
+              >
+                Retake on the tests page
+              </Link>
+              .
+            </span>
+          </p>
+        </div>
+      ) : null}
 
       <main className="mx-auto max-w-6xl px-6 pt-8 pb-32">
         {hasStimulus ? (

@@ -1,7 +1,14 @@
 import { convexQuery } from '@convex-dev/react-query'
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { Link, createFileRoute, redirect } from '@tanstack/react-router'
-import { Clock, FileText, ListChecks } from 'lucide-react'
+import { useMutation } from 'convex/react'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import {
+  Link,
+  createFileRoute,
+  redirect,
+  useNavigate,
+} from '@tanstack/react-router'
+import { Clock, FileText, ListChecks, RotateCcw } from 'lucide-react'
+import { useState } from 'react'
 
 import Navbar from '#/components/Navbar.tsx'
 import { api } from '../../../convex/_generated/api'
@@ -35,8 +42,34 @@ function formatDuration(totalSeconds: number) {
   return remainder === 0 ? `${hours} hr` : `${hours} hr ${remainder} min`
 }
 
+function formatDate(ms: number) {
+  return new Date(ms).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
 function TestsPage() {
+  const navigate = useNavigate()
   const { data: tests } = useSuspenseQuery(convexQuery(api.tests.list, {}))
+  const { data: myAttempts } = useQuery(convexQuery(api.attempts.listMine, {}))
+  const retake = useMutation(api.attempts.retake)
+  const [retaking, setRetaking] = useState<string | null>(null)
+
+  const statusBySlug = new Map(
+    (myAttempts ?? []).map((attempt) => [attempt.testSlug, attempt]),
+  )
+
+  const onRetake = async (slug: string) => {
+    setRetaking(slug)
+    try {
+      await retake({ testSlug: slug })
+      await navigate({ to: '/tests/$slug', params: { slug } })
+    } finally {
+      setRetaking(null)
+    }
+  }
 
   return (
     <div className="relative min-h-screen bg-black">
@@ -53,8 +86,8 @@ function TestsPage() {
           Practice tests
         </h1>
         <p className="mt-3 text-sm text-white">
-          Pick a test to begin. Each module is timed separately, and the timer
-          keeps running if you close the tab.
+          Pick a test to begin. Your answers save as you go, and lock once you
+          submit.
         </p>
 
         {tests.length === 0 ? (
@@ -63,16 +96,27 @@ function TestsPage() {
           </p>
         ) : (
           <ul className="mt-10 space-y-4">
-            {tests.map((test) => (
-              <li key={test.slug}>
-                <Link
-                  to="/tests/$slug"
-                  params={{ slug: test.slug }}
-                  className="liquid-glass block rounded-2xl px-6 py-5 transition-colors hover:bg-white/5"
+            {tests.map((test) => {
+              const attempt = statusBySlug.get(test.slug)
+              const submitted = attempt?.status === 'submitted'
+
+              return (
+                <li
+                  key={test.slug}
+                  className="liquid-glass rounded-2xl px-6 py-5"
                 >
-                  <h2 className="font-display text-lg font-semibold tracking-tight text-white">
+                  {/*
+                    The card is not one big link: a Retake button nested inside
+                    an anchor is invalid markup and traps keyboard users. Title
+                    links, button is its own control.
+                  */}
+                  <Link
+                    to="/tests/$slug"
+                    params={{ slug: test.slug }}
+                    className="font-display rounded text-lg font-semibold tracking-tight text-white underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none"
+                  >
                     {test.title}
-                  </h2>
+                  </Link>
 
                   {test.description ? (
                     <p className="mt-1 text-sm text-white">
@@ -82,22 +126,80 @@ function TestsPage() {
 
                   <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-white">
                     <span className="flex items-center gap-1.5">
-                      <FileText size={14} />
+                      <FileText size={14} aria-hidden="true" />
                       {test.moduleCount}{' '}
                       {test.moduleCount === 1 ? 'module' : 'modules'}
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <ListChecks size={14} />
+                      <ListChecks size={14} aria-hidden="true" />
                       {test.questionCount} questions
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <Clock size={14} />
+                      <Clock size={14} aria-hidden="true" />
                       {formatDuration(test.totalTimeSeconds)}
                     </span>
                   </div>
-                </Link>
-              </li>
-            ))}
+
+                  <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-white/15 pt-4">
+                    {submitted ? (
+                      <>
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-black">
+                          Submitted
+                          {attempt.submittedAt
+                            ? ` ${formatDate(attempt.submittedAt)}`
+                            : ''}
+                        </span>
+                        <span className="text-xs text-white">
+                          {attempt.answeredCount} of {test.questionCount}{' '}
+                          answered
+                        </span>
+                        <Link
+                          to="/tests/$slug"
+                          params={{ slug: test.slug }}
+                          className="ml-auto rounded-full border border-white/40 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none"
+                        >
+                          View submission
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => void onRetake(test.slug)}
+                          disabled={retaking === test.slug}
+                          className="flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-medium text-black transition-opacity hover:opacity-80 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none"
+                        >
+                          <RotateCcw size={13} aria-hidden="true" />
+                          {retaking === test.slug ? 'Starting…' : 'Retake'}
+                        </button>
+                      </>
+                    ) : attempt ? (
+                      <>
+                        <span className="rounded-full border border-white/40 px-3 py-1 text-xs text-white">
+                          In progress
+                        </span>
+                        <span className="text-xs text-white">
+                          {attempt.answeredCount} of {test.questionCount}{' '}
+                          answered
+                        </span>
+                        <Link
+                          to="/tests/$slug"
+                          params={{ slug: test.slug }}
+                          className="ml-auto rounded-full bg-white px-4 py-2 text-xs font-medium text-black transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none"
+                        >
+                          Continue
+                        </Link>
+                      </>
+                    ) : (
+                      <Link
+                        to="/tests/$slug"
+                        params={{ slug: test.slug }}
+                        className="rounded-full bg-white px-4 py-2 text-xs font-medium text-black transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none"
+                      >
+                        Start test
+                      </Link>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
           </ul>
         )}
       </main>

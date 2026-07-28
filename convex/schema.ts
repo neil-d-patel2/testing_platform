@@ -17,13 +17,24 @@ export default defineSchema({
   attempts: defineTable({
     // Clerk user id (`identity.subject`). Derived from the JWT, never an arg.
     userId: v.string(),
+    /*
+     * Snapshot of the student's name/email at the time the attempt started,
+     * copied from the Clerk JWT. Denormalized because Convex has no join to
+     * Clerk — without it the tutor view could only show raw `user_2abc...`
+     * ids. Optional: older rows predate the field, and Clerk does not
+     * guarantee either claim.
+     */
+    userName: v.optional(v.string()),
+    userEmail: v.optional(v.string()),
     testSlug: v.string(),
     status: v.union(v.literal('in_progress'), v.literal('submitted')),
     startedAt: v.number(),
     submittedAt: v.optional(v.number()),
   })
     .index('by_user', ['userId'])
-    .index('by_user_and_test', ['userId', 'testSlug']),
+    .index('by_user_and_test', ['userId', 'testSlug'])
+    // Drives the tutor view: submitted attempts, newest first.
+    .index('by_status', ['status']),
 
   /**
    * A student's response to one question, upserted as they work.

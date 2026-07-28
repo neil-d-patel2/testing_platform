@@ -85,7 +85,10 @@ export const start = mutation({
   args: { testSlug: v.string() },
   returns: v.id('attempts'),
   handler: async (ctx, args) => {
-    const userId = await requireUserId(ctx)
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) {
+      throw new Error('Not signed in')
+    }
 
     // Reject slugs that aren't real tests, so a client can't create attempts
     // against arbitrary strings.
@@ -96,21 +99,118 @@ export const start = mutation({
     const existing = await ctx.db
       .query('attempts')
       .withIndex('by_user_and_test', (q) =>
-        q.eq('userId', userId).eq('testSlug', args.testSlug),
+        q.eq('userId', identity.subject).eq('testSlug', args.testSlug),
       )
       .order('desc')
       .first()
 
+    /*
+     * Returns the newest attempt whatever its status. A submitted attempt is
+     * therefore reopened read-only rather than replaced — starting a fresh one
+     * requires `retake`, which is an explicit student action.
+     */
     if (existing) {
       return existing._id
     }
 
     return await ctx.db.insert('attempts', {
-      userId,
+      userId: identity.subject,
+      userName: identity.name,
+      userEmail: identity.email,
       testSlug: args.testSlug,
       status: 'in_progress',
       startedAt: Date.now(),
     })
+  },
+})
+
+/**
+ * Begins a fresh attempt, leaving the previous one intact.
+ *
+ * Old attempts are kept rather than overwritten: the tutor grades submissions,
+ * and silently discarding a prior submission on retake would destroy work
+ * they may not have looked at yet.
+ */
+export const retake = mutation({
+  args: { testSlug: v.string() },
+  returns: v.id('attempts'),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) {
+      throw new Error('Not signed in')
+    }
+
+    if (!getTest(args.testSlug)) {
+      throw new Error(`Unknown test: ${args.testSlug}`)
+    }
+
+    const latest = await ctx.db
+      .query('attempts')
+      .withIndex('by_user_and_test', (q) =>
+        q.eq('userId', identity.subject).eq('testSlug', args.testSlug),
+      )
+      .order('desc')
+      .first()
+
+    // Nothing to retake from — an unsubmitted attempt is already the live one,
+    // and starting a second would orphan the answers in it.
+    if (latest && latest.status !== 'submitted') {
+      return latest._id
+    }
+
+    return await ctx.db.insert('attempts', {
+      userId: identity.subject,
+      userName: identity.name,
+      userEmail: identity.email,
+      testSlug: args.testSlug,
+      status: 'in_progress',
+      startedAt: Date.now(),
+    })
+  },
+})
+
+/**
+ * The caller's latest attempt per test, for the test list. Metadata only — no
+ * answers, so this stays cheap as attempt history grows.
+ */
+export const listMine = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) {
+      return []
+    }
+
+    const attempts = await ctx.db
+      .query('attempts')
+      .withIndex('by_user', (q) => q.eq('userId', identity.subject))
+      .order('desc')
+      .take(200)
+
+    // `order('desc')` puts the newest first, so the first row seen for a slug
+    // is the current one.
+    const latestBySlug = new Map<string, (typeof attempts)[number]>()
+    for (const attempt of attempts) {
+      if (!latestBySlug.has(attempt.testSlug)) {
+        latestBySlug.set(attempt.testSlug, attempt)
+      }
+    }
+
+    return await Promise.all(
+      [...latestBySlug.values()].map(async (attempt) => {
+        const answers = await ctx.db
+          .query('answers')
+          .withIndex('by_attempt', (q) => q.eq('attemptId', attempt._id))
+          .collect()
+
+        return {
+          testSlug: attempt.testSlug,
+          status: attempt.status,
+          submittedAt: attempt.submittedAt,
+          answeredCount: answers.length,
+        }
+      }),
+    )
   },
 })
 

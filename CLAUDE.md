@@ -77,6 +77,13 @@ client can post any `_id`. See `convex/todos.ts`.
 **Generated — never hand-edit:** `src/routeTree.gen.ts`, `convex/_generated/**`.
 Adding a route file? `pnpm generate-routes` (the dev server also does it).
 
+**The Clerk `convex` JWT template must carry `name` and `email` claims.** The
+setup command in the README creates it with only `aud`, which makes
+`identity.name` / `identity.email` permanently `undefined` — the tutor grading
+view then has nothing but raw `user_2abc…` ids to show. The template now sends
+`{{user.full_name}}` and `{{user.primary_email_address}}`. Recreating the
+template from scratch reintroduces the bug.
+
 **No hyphens in `convex/` filenames.** Every path under `convex/` is a module
 path, and Convex rejects the push with `is not a valid path to a Convex module`
 — alphanumerics, underscores, and periods only. Test content files are
