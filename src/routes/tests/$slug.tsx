@@ -833,8 +833,18 @@ function AttemptRunner({
               ← All tests
             </Link>
             <h1 className="font-display truncate text-lg font-semibold tracking-tight text-black">
-              {test.title}
+              {currentModule.title}
             </h1>
+            {/*
+              Where you are, not where you could go. Sections are locked in
+              order, so a list of them would only be a list of places the
+              student can't click — the strip that used to live here read as
+              tabs and invited exactly that.
+            */}
+            <p className="text-sm text-neutral-600">
+              <span className="sr-only">{test.title}. </span>
+              Section {moduleIndex + 1} of {test.modules.length}
+            </p>
           </div>
 
           <div className="flex items-center gap-3 text-sm">
@@ -862,48 +872,6 @@ function AttemptRunner({
             )}
           </div>
         </div>
-
-        {/*
-          A progress read-out, not navigation: the server decides which module
-          is open, so an earlier one is genuinely unreachable and must not look
-          like something to click.
-        */}
-        <nav aria-label="Test sections" className="mx-auto max-w-6xl px-6">
-          <ol className="flex gap-6 overflow-x-auto pb-2.5">
-            {test.modules.map((m, index) => {
-              const state =
-                index < moduleIndex
-                  ? 'done'
-                  : index === moduleIndex
-                    ? 'current'
-                    : 'upcoming'
-              return (
-                <li
-                  key={m.id}
-                  aria-current={state === 'current' ? 'step' : undefined}
-                  className={`flex items-center gap-1.5 border-b-2 pt-1 text-sm whitespace-nowrap ${
-                    state === 'current'
-                      ? 'border-black font-semibold text-black'
-                      : 'border-transparent text-neutral-500'
-                  }`}
-                >
-                  {state === 'done' ? (
-                    <Check size={14} aria-hidden="true" />
-                  ) : state === 'upcoming' ? (
-                    <Lock size={13} aria-hidden="true" />
-                  ) : null}
-                  {m.title}
-                  {state === 'done' ? (
-                    <span className="sr-only"> (finished)</span>
-                  ) : null}
-                  {state === 'upcoming' ? (
-                    <span className="sr-only"> (locked)</span>
-                  ) : null}
-                </li>
-              )
-            })}
-          </ol>
-        </nav>
       </header>
 
       {confirmingAdvance && !isSubmitted ? (
