@@ -9,6 +9,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q1',
+      domain: 'Craft and Structure',
+      skill: 'Words in Context',
+      correctAnswer: 3,
       passage:
         'The National Heritage Fellowship was created to honor exceptional folk and traditional artists in the United States. One artist who received the fellowship is jazz violinist and guitarist Claude “Fiddler” Williams. Williams was chosen for his lifetime ______ the arts.',
       prompt:
@@ -23,6 +26,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q2',
+      domain: 'Craft and Structure',
+      skill: 'Words in Context',
+      correctAnswer: 0,
       passageIntro:
         'The following text is from Kenneth Grahame’s 1908 novel *The Wind in the Willows*. The Mole is returning home after a visit to Mr. Badger’s house.',
       passage:
@@ -39,6 +45,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q3',
+      domain: 'Craft and Structure',
+      skill: 'Words in Context',
+      correctAnswer: 1,
       passage:
         'The fossil remains of the individual known as Oase 1, discovered in Romania in 2002, can help paleoanthropologists not only ______ steps in the evolution of hominids but also illuminate the Pleistocene epoch generally, revealing important details about the time in which Oase 1 lived.',
       prompt:
@@ -48,6 +57,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q4',
+      domain: 'Craft and Structure',
+      skill: 'Words in Context',
+      correctAnswer: 2,
       passage:
         'The Betsiboka River delta is a remarkably ______ landscape: it is a constantly evolving network of channels and strips of land that change in size and shape as the river deposits new sedimentary particles where the river meets the waters of the Indian Ocean.',
       prompt:
@@ -57,6 +69,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q5',
+      domain: 'Craft and Structure',
+      skill: 'Text Structure and Purpose',
+      correctAnswer: 3,
       passage:
         '<u>A microgenre is a specialized genre consisting of a comparatively small number of stylistically similar artists.</u> The microgenre of electronic music known as hyperpop emerged in the 2010s, with American musician Laura Les as an early exponent. Her combination of dense synthesizer arrangements and metallic percussion with vocals electronically shifted in pitch above her natural range exemplifies the hyperpop sound. More recently, Japanese-British recording artist Rina Sawayama has contributed to the microgenre by incorporating pop melodies into hyperpop songs.',
       prompt:
@@ -71,6 +86,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q6',
+      domain: 'Craft and Structure',
+      skill: 'Text Structure and Purpose',
+      correctAnswer: 0,
       passage:
         'Cuttlefish and barn owls see in three dimensions (3D) by combining two images in their brains, one from each eye. This produces a sense of depth, helping the animals judge how close or far away an object is. Researchers have investigated 3D vision in praying mantises as well. In one study, Vivek Nityananda and his team fitted the mantises’ faces with two different color filters, one covering each eye, <u>much like the filters in 3D glasses once worn at movies</u>. By observing the mantises’ reactions to projected images, the team confirmed that mantises do indeed have 3D vision, but it is unlike that of other animals.',
       prompt:
@@ -85,6 +103,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q7',
+      domain: 'Craft and Structure',
+      skill: 'Cross-Text Connections',
+      correctAnswer: 2,
       passageIntro:
         '**Text 1** is adapted from George Eliot’s 1871 novel *Middlemarch*. **Text 2** is a work of literary criticism about *Middlemarch*.',
       passage:
@@ -101,6 +122,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q8',
+      domain: 'Craft and Structure',
+      skill: 'Cross-Text Connections',
+      correctAnswer: 1,
       passage:
         'Text 1\n\nAccording to a study by a conservation group representing 11 tribal nations in the Great Lakes region, the firefly (*waawaatesi* in the Ojibwe language) will have significantly worse outcomes over the next 50 years if temperatures increase as much as some models suggest. By contrast, the American crow (*aandeg* in Ojibwe) should be able to withstand the highest predicted warming without much harm and so likely will not require the conservation efforts that the firefly will.\n\nText 2\n\nUS government agencies involved in conservation are unfortunately not able to address every possible threat to natural resources. They must use the best information available to decide which species are most threatened and therefore most in need of conservation efforts.',
       prompt:
@@ -115,6 +139,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q9',
+      domain: 'Information and Ideas',
+      skill: 'Inferences',
+      correctAnswer: 2,
       passageIntro:
         'The following text is from Julia Alvarez’s 2000 novel *In the Name of Salomé*. Salomé, a poet, is hosting guests in the front parlor of her family home, and Ramona is her sister. A salon is a social gathering for the exploration of intellectual ideas.',
       passage:
@@ -131,6 +158,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q10',
+      domain: 'Information and Ideas',
+      skill: 'Central Ideas and Details',
+      correctAnswer: 1,
       passage:
         'Plant-based artifacts, such as wooden tools, are not frequently studied because their perishable nature makes them likely to break down over time. However, Miriam Cubas and her team were able to study plant-based artifacts believed to stem from the Neolithic period that had been well preserved by favorable conditions in a cave in Spain: low overall humidity and a dry wind current facilitated preservation by suppressing bacterial growth. Surprisingly, the research revealed that some of the artifacts dated even further back than previously thought, to the Mesolithic period.',
       prompt:
@@ -145,6 +175,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q11',
+      domain: 'Information and Ideas',
+      skill: 'Command of Evidence',
+      correctAnswer: 3,
       passage:
         'Researchers Carolina Laura Morales and Anna Traveset gathered data about flowering plants growing alongside each other in various locations. In each case, the researchers identified one plant as a “target species” and a nearby plant as a “neighboring species.” The researchers then calculated a value to show how the neighboring species affected pollinator visits to the target species. A negative effect value indicates that the neighboring species had a harmful effect on the target species. Based on the table, two neighboring species that had a harmful effect on target species are the ______',
       table: {
@@ -170,6 +203,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q12',
+      domain: 'Information and Ideas',
+      skill: 'Command of Evidence',
+      correctAnswer: 3,
       passage:
         '“A Pair of Silk Stockings” is an 1897 short story written by Kate Chopin. In the story, Mrs. Sommers attends a play, which she experiences as a temporary escape from the circumstances of her daily life: ______',
       prompt:
@@ -184,6 +220,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q13',
+      domain: 'Information and Ideas',
+      skill: 'Command of Evidence',
+      correctAnswer: 1,
       passage:
         'Hypothesizing that lullabies, characterized by their less steady beat, are universally calming to infants, Constance M. Bainbridge and colleagues played a lullaby sung in the Western Nahuatl language and a non-lullaby sung in the Serbian language to a group of infants. The team found that the infants’ heart rates and pupil sizes both decreased more during the lullaby than during the non-lullaby. Since a decrease in heart rate is associated with relaxation, the team concluded that the lullaby relaxed the infants. However, noting that a reduced heart rate can also be associated with increased attention, one critic argues that the lullaby instead simply attracted the infants’ attention.',
       prompt:
@@ -198,6 +237,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q14',
+      domain: 'Information and Ideas',
+      skill: 'Command of Evidence',
+      correctAnswer: 0,
       passage:
         'High-entropy alloys (HEAs) have been observed to have greater fracture toughness—greater resistance to crack propagation—than conventional alloys. It has been proposed that fracture toughness increases with the proportion of an HEA consisting of cobalt, but data on HEAs compiled by engineer Xuesong Fan show that this is not the case; for example, ______',
       table: {
@@ -244,6 +286,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q15',
+      domain: 'Information and Ideas',
+      skill: 'Inferences',
+      correctAnswer: 3,
       passage:
         'The alahee tree is one of many forest plant species native to Oahu, a Hawaiian island, that are at risk of extinction. The survival of most of these species in the wild largely depends on birds eating their fruits and then dropping the seeds in different locations. Although Oahu’s native fruit-eating birds have all gone extinct, the red-vented bulbul and other fruit-eating bird species have been brought to the island and are now common there. Studies confirm that these nonnative birds are spreading plant seeds on Oahu, suggesting that the birds ______',
       prompt: 'Which choice most logically completes the text?',
@@ -257,6 +302,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q16',
+      domain: 'Standard English Conventions',
+      skill: 'Form, Structure, and Sense',
+      correctAnswer: 1,
       passage:
         '“Quirky,” a term often employed by those analyzing independent cinema from the 1990s and 2000s, has proved remarkably malleable as a formal concept. In the work of film scholar James MacDowell, quirkiness is a comedic sensibility—on full display in films like *Fantastic Mr. Fox* and *Napoleon Dynamite*—characterized by ______ “tonal combination of ‘irony’ and ‘sincerity.’”',
       prompt:
@@ -266,6 +314,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q17',
+      domain: 'Standard English Conventions',
+      skill: 'Boundaries',
+      correctAnswer: 0,
       passage:
         'The human body has three types of muscle ______ cardiac, and skeletal. The extensor indicis is a skeletal muscle—of which the body contains more than six hundred—and it helps with extending the index finger.',
       prompt:
@@ -280,6 +331,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q18',
+      domain: 'Standard English Conventions',
+      skill: 'Form, Structure, and Sense',
+      correctAnswer: 3,
       passage:
         'Mississippi resident Hiram Rhodes Revels, sworn in as a member of the US Senate in 1870, was one of the nearly two thousand African ______ during the decade following the Civil War.',
       prompt:
@@ -294,6 +348,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q19',
+      domain: 'Standard English Conventions',
+      skill: 'Form, Structure, and Sense',
+      correctAnswer: 3,
       passage:
         'Greece’s constitution, enacted in 1975, contains three of the six constitutional features that enhance judicial independence, as identified by legal scholars James Melton and Tom Ginsburg. Explicit provisions for judicial independence, their research explains, ______ more likely to be found in constitutions enacted after 1985.',
       prompt:
@@ -303,6 +360,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q20',
+      domain: 'Standard English Conventions',
+      skill: 'Boundaries',
+      correctAnswer: 0,
       passage:
         'The programming languages COBOL, developed by Grace Hopper in ______ developed by Chris Lattner in 2014, are all routinely translated into executable code by tools known as compilers.',
       prompt:
@@ -317,6 +377,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q21',
+      domain: 'Standard English Conventions',
+      skill: 'Form, Structure, and Sense',
+      correctAnswer: 2,
       passage:
         'Proto-Uto-Aztecan is a protolanguage, or a hypothesized ancestral language, of all the Uto-Aztecan languages—fifty-eight languages that, because ______ descendants of Proto-Uto-Aztecan, can provide information about the protolanguage’s structure.',
       prompt:
@@ -326,6 +389,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q22',
+      domain: 'Expression of Ideas',
+      skill: 'Transitions',
+      correctAnswer: 2,
       passage:
         'Though Middle English was widely spoken in fourteenth-century England, the English language was rarely employed in literature until poet Geoffrey Chaucer pioneered its literary use. ______ his manuscripts contain the first documented uses of over 2,000 English words—like the word “annoyance” in his 1386 poem “The Parson’s Tale”—which led a contemporary to dub him “the first finder of our fair language.”',
       prompt:
@@ -335,6 +401,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q23',
+      domain: 'Expression of Ideas',
+      skill: 'Transitions',
+      correctAnswer: 1,
       passage:
         'In skateboarding, the 900—a trick in which the skateboarder spins two and a half times in midair—is so rare that every successful execution of it is a historic occasion. ______ ever since Jonathan Schwan and Tas Pappas performed their 900s in 2013 and 2014, respectively, fans have revered them as titans of the sport.',
       prompt:
@@ -349,6 +418,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q24',
+      domain: 'Expression of Ideas',
+      skill: 'Rhetorical Synthesis',
+      correctAnswer: 3,
       passage:
         'While researching a topic, a student has taken the following notes:\n\n• Elizabeth Catlett (1915–2012) was a celebrated African American artist.\n• She is best known for creating sculptures and prints that explore the Black experience.\n• *Black Unity* is a 1968 sculpture by Catlett.\n• *Links Together* is a 1996 print by Catlett.\n\nThe student wants to provide an example of one of Catlett’s sculptures.',
       prompt:
@@ -363,6 +435,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q25',
+      domain: 'Expression of Ideas',
+      skill: 'Rhetorical Synthesis',
+      correctAnswer: 0,
       passage:
         'While researching a topic, a student has taken the following notes:\n\n• Lighthouses send out crucial light signals to help ships and other watercraft navigate at night.\n• Before automation, lighthouses were run by lighthouse keepers.\n• Catherine A. Murdock was the lighthouse keeper at Rondout Creek Light in New York.\n• She held this position from 1857 to 1907.\n• Mary J. Succow was the lighthouse keeper at Pass Manchac Light in Louisiana.\n• She held this position from 1873 to 1909.\n\nThe student wants to emphasize a similarity between Catherine A. Murdock and Mary J. Succow.',
       prompt:
@@ -377,6 +452,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q26',
+      domain: 'Expression of Ideas',
+      skill: 'Rhetorical Synthesis',
+      correctAnswer: 0,
       passage:
         'While researching a topic, a student has taken the following notes:\n\n• The Museu de les Ciències Príncipe Felipe in Valencia, Spain, is home to a Foucault pendulum.\n• The pendulum consists of a weighted ball that swings at the end of a roughly 34-meter-long cable.\n• Like all Foucault pendulums, it dangles from a fixed point that ensures the swing path of the pendulum does not change.\n• To an observer, the swing path of a Foucault pendulum appears to change over time because Earth rotates beneath it.\n• Foucault pendulums are used as a simple way to provide evidence of Earth’s rotation.',
       prompt:
@@ -391,6 +469,9 @@ export const readingWriting1: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw1-q27',
+      domain: 'Expression of Ideas',
+      skill: 'Rhetorical Synthesis',
+      correctAnswer: 2,
       passage:
         'While researching a topic, a student has taken the following notes:\n\n• Mali is a country in West Africa.\n• A high percentage of Mali’s population—47.3 percent—is under fifteen years old.\n• It has the second-largest under-fifteen population in the world.\n• Roughly 40 percent of Africa’s population is under fifteen years old—the highest percentage of any continent.\n• According to the United Nations (UN), Africa’s “high number of young people is an opportunity for the continent’s growth—but only if these new generations are fully empowered to realize their best potential.”\n\nThe student wants to emphasize the global rank of Mali’s youth population.',
       prompt:

@@ -29,6 +29,14 @@ interface QuestionBase {
   passage?: string
   /** The question itself. Newlines are preserved when rendered. */
   prompt: string
+  /**
+   * College Board content domain, e.g. "Craft and Structure". Used for the
+   * report's accuracy-by-domain breakdown. Not answer-revealing, so unlike
+   * `correctAnswer`/`explanation` it is safe to send to the student.
+   */
+  domain?: string
+  /** College Board skill within the domain, e.g. "Words in Context". */
+  skill?: string
   table?: QuestionTable
   /**
    * Stands in for a figure that hasn't been transcribed yet. Rendered as a

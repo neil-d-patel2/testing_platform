@@ -20,6 +20,7 @@ export const Route = createFileRoute('/tests/$slug_/report')({
 
 type Report = NonNullable<FunctionReturnType<typeof api.attempts.report>>
 type ReportQuestion = Report['modules'][number]['questions'][number]
+type BreakdownRow = Report['byDomain'][number]
 
 /**
  * A response in the form a student reads it: the letter and the choice text
@@ -184,6 +185,24 @@ function ReportPage() {
           ))}
         </ul>
 
+        {report.byDomain.length > 0 ? (
+          <>
+            <h2 className="font-display mt-12 text-lg font-semibold">
+              By domain
+            </h2>
+            <AccuracyTable rows={report.byDomain} />
+          </>
+        ) : null}
+
+        {report.bySkill.length > 0 ? (
+          <>
+            <h2 className="font-display mt-12 text-lg font-semibold">
+              By skill
+            </h2>
+            <AccuracyTable rows={report.bySkill} />
+          </>
+        ) : null}
+
         <h2 className="font-display mt-12 text-lg font-semibold">
           Your answers
         </h2>
@@ -253,6 +272,43 @@ function ReportPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+/**
+ * Accuracy rows for a breakdown (by domain or by skill). Ungraded rows (no
+ * answer key yet) show the question count with no percentage, same logic as
+ * the "Not scored" summary above — a missing key isn't a 0%.
+ */
+function AccuracyTable({ rows }: { rows: Array<BreakdownRow> }) {
+  return (
+    <ul className="mt-4 divide-y divide-neutral-200 border-y border-neutral-200">
+      {rows.map((row) => {
+        const percent =
+          row.graded > 0 ? Math.round((row.correct / row.graded) * 100) : null
+
+        return (
+          <li key={row.label} className="py-3">
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="text-[15px]">{row.label}</span>
+              <span className="shrink-0 text-sm tabular-nums text-neutral-600">
+                {percent !== null
+                  ? `${row.correct} of ${row.graded} correct · ${percent}%`
+                  : `${row.total} question${row.total === 1 ? '' : 's'} · not scored`}
+              </span>
+            </div>
+            {percent !== null ? (
+              <div className="mt-2 h-1.5 rounded-full bg-neutral-100">
+                <div
+                  className="h-1.5 rounded-full bg-black"
+                  style={{ width: `${percent}%` }}
+                />
+              </div>
+            ) : null}
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 

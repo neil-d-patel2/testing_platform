@@ -11,6 +11,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q1',
+      domain: 'Craft and Structure',
+      skill: 'Words in Context',
+      correctAnswer: 3,
       passage:
         'Béláné Mocsáry, who traveled solo to four continents in the early 1900s, undoubtedly accomplished much, but to gain a lasting place in our historical memory, there is little that can ______ being the first to do something. For example, people will always remember that Adeline and Augusta Van Buren were the first women to ride solo motorcycles across the continental United States.',
       prompt:
@@ -25,6 +28,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q2',
+      domain: 'Craft and Structure',
+      skill: 'Words in Context',
+      correctAnswer: 2,
       passage:
         'Despite stated claims of global relevance, much major research on income inequality performed in the 2010s suffered from a myopic focus on a few countries in North America and Western Europe, partly because of limited data availability. Researchers would later ______ this shortcoming after gaining new access to administrative records located in nations in Asia, such as India, and Eastern Europe, such as Poland.',
       prompt:
@@ -34,6 +40,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q3',
+      domain: 'Craft and Structure',
+      skill: 'Words in Context',
+      correctAnswer: 1,
       passage:
         'In the early 2010s, the price of abstract paintings by so-called Zombie Formalist artists rose dramatically, which had the counterintuitive effect of ______ demand: buyers who had not previously wanted to purchase Zombie Formalist paintings thronged the market, believing prices would continue to rise and the paintings could be resold later at a profit.',
       prompt:
@@ -43,6 +52,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q4',
+      domain: 'Craft and Structure',
+      skill: 'Words in Context',
+      correctAnswer: 0,
       passage:
         'The fact that publications by Federal Reserve Bank of Cleveland economist Loretta J. Mester, who studies central banking, are so frequently cited in other scholars’ work ______ the usefulness of her research for her peers—other economists clearly find her studies valuable for their own scholarship.',
       prompt:
@@ -52,6 +64,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q5',
+      domain: 'Craft and Structure',
+      skill: 'Text Structure and Purpose',
+      correctAnswer: 3,
       passage:
         'Shedding light on the thermal biology of fungi, research by Radamés Cordero et al. indicates that certain mushrooms—including *Amanita brunnescens* and species from the genus *Hortiboletus*—can achieve a hypothermic state through evaporative cooling. Effects of this thermoregulation were not limited to the fungi’s fruiting bodies and root-like hyphae: <u>temperature reductions were observed in the air immediately surrounding the mushrooms</u>. Though slight, the reductions inspired an air-cooling device; using approximately 400 grams of mushrooms, the team’s prototype lowered the air temperature in a controlled environment by 10°C in forty minutes.',
       prompt:
@@ -66,6 +81,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q6',
+      domain: 'Craft and Structure',
+      skill: 'Text Structure and Purpose',
+      correctAnswer: 0,
       passage:
         'In Thailand, the use of solid fuel—for example, coal and wood—as a share of total household fuel use fell by approximately 40 percent between 2000 and 2019; such shifts are often explained by appealing to the energy ladder, a model holding that fuel choice is mediated mainly by household income. Specifically, the model proposes that high-technology fuels displace solid fuels as incomes rise. Moses Pundo and Gavin Fraser’s study of fuel use in Kenya shows this model to be reductive, however: household fuel use was heterogeneous, flexible, and influenced by several factors, including the type of dwelling a household occupies.',
       prompt:
@@ -80,6 +98,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q7',
+      domain: 'Information and Ideas',
+      skill: 'Central Ideas and Details',
+      correctAnswer: 1,
       passage:
         'In a study by Mika R. Moran, Daniel A. Rodríguez, and colleagues, residents of Lima, Peru, and Buenos Aires, Argentina, were surveyed about parks in their cities. Of the 663 respondents from Lima, 72.7% indicated that they use the city’s parks, and of the 683 respondents from Buenos Aires, 69.9% indicated that they use city parks. Given that the percentage of Lima respondents who reported living within a 10-minute walk of a park was much lower than that reported by Buenos Aires respondents, greater proximity alone cannot explain the difference in park use.',
       prompt:
@@ -94,6 +115,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q8',
+      domain: 'Information and Ideas',
+      skill: 'Command of Evidence',
+      correctAnswer: 1,
       passage:
         'The bird species *Philydor erythrocercum* (the rufous-rumped foliage-gleaner) shares some territory in French Guiana with *Thamnomanes caesius* (the cinereous antshrike), which emits a loud alarm call when it detects predators. Biologist Ari Martinez and colleagues recorded *T. caesius* alarm calls and played them in the vicinity of wild *P. erythrocercum*. Finding that the birds often froze in place or scattered into vegetation upon hearing the calls, the researchers concluded that *P. erythrocercum* associates *T. caesius* alarm calls with danger.',
       prompt:
@@ -108,6 +132,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q9',
+      domain: 'Information and Ideas',
+      skill: 'Command of Evidence',
+      correctAnswer: 3,
       passage:
         'Apple’s introduction of the iPhone in 2007 is a quintessential instance of brand extension—the company leveraged its brand recognition as a computer manufacturer to enter a product category in which it had not previously competed. An outstanding question is whether perceived category similarity predicts consumers’ likelihood of purchasing brand extensions. To answer this question, Alicia Grasby et al. identified 30 extended-brand pairs—for example, the same brand of laundry detergent and air freshener—in 52 weeks of purchases by approximately 60,000 households and, for each pair, calculated the change in probability of a brand in one category being purchased if the same brand was purchased in the other category.',
       prompt:
@@ -122,6 +149,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q10',
+      domain: 'Information and Ideas',
+      skill: 'Command of Evidence',
+      correctAnswer: 3,
       passage:
         'Neuroscientist Kiyohito Iigaya and colleagues developed a computational model to predict how much a person will enjoy a particular work of art on a scale from 1 (not at all) to 4 (very much). They then recruited participants to use the same scale to rate several sets of paintings in various styles and calculated the correlation between the ratings predicted by the model and those reported by the participants.',
       figureNote:
@@ -138,6 +168,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q11',
+      domain: 'Information and Ideas',
+      skill: 'Inferences',
+      correctAnswer: 0,
       passage:
         'Many studies have found a positive association between levels of dissolved organic carbon and mercury in bodies of fresh water in North America. But Enelton Fagnani, José Roberto Guimarães, and Pedro Sérgio Fadini did not find this correlation in a study conducted in Brazil, leading some scientists to hypothesize that the association is particular to North America. However, several other studies conducted outside North America, such as one by Sara M. Ekström and colleagues in Sweden, showed results similar to those of the North American studies, while few have produced results similar to those of the study by Fagnani, Guimarães, and Fadini, suggesting that ______',
       prompt: 'Which choice most logically completes the text?',
@@ -151,6 +184,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q12',
+      domain: 'Information and Ideas',
+      skill: 'Inferences',
+      correctAnswer: 3,
       passage:
         'Chelsea Wood et al. tracked temperature-driven changes in the abundance of *Opechona* sp. (a complex life cycle parasite, or CLP, that requires three host species throughout its life cycle), *Bomolochus cuneatus* (a directly transmitted parasite, which requires only one host species), and 83 other parasite taxa found on eight fish species. CLPs are transmitted when an infected host is ingested by an individual of another species, typically shielding CLPs from the external environment, whereas directly transmitted parasites are exposed to external conditions during transmission. However, Wood et al. found that three-host CLP abundance decreased as sea temperatures rose, whereas directly transmitted parasite abundance was largely stable, suggesting that ______',
       prompt: 'Which choice most logically completes the text?',
@@ -164,6 +200,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q13',
+      domain: 'Information and Ideas',
+      skill: 'Inferences',
+      correctAnswer: 3,
       passage:
         'Prolonged exposure to anthropogenic noise—sounds from human sources such as traffic or mining—can affect animals, as Kirsty Elizabeth McLaughlin and Hansjoerg P. Kunc found in a 2015 study of zebra cichlids. Researchers conducted a meta-analysis of studies of how such noise affects animals and found that, for every study, relevant traits or behaviors of the animals were observably different between the exposed group and the otherwise similar but unexposed group. Although, on average, studies of fish showed larger differences than studies of birds did, for every class of animals examined, there were individual studies showing differences well above the average for fish. Therefore, the results of the meta-analysis suggest that ______',
       prompt: 'Which choice most logically completes the text?',
@@ -177,6 +216,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q14',
+      domain: 'Standard English Conventions',
+      skill: 'Form, Structure, and Sense',
+      correctAnswer: 1,
       passage:
         'Although the epic poem *Parzival* dates back to the thirteenth century, ______ compelling narrative still captivates readers today.',
       prompt:
@@ -186,6 +228,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q15',
+      domain: 'Standard English Conventions',
+      skill: 'Boundaries',
+      correctAnswer: 0,
       passage:
         'Most sand is beige because of deposits of gray- and tan-hued minerals, such as quartz and feldspar. The sand at Les Sables Roses Beach in French Polynesia is a more unusual ______ deposits of crushed coral and other organic matter lend the sand a unique pink hue.',
       prompt:
@@ -200,6 +245,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q16',
+      domain: 'Standard English Conventions',
+      skill: 'Boundaries',
+      correctAnswer: 0,
       passage:
         'The poem “The Egg Boiler,” which was published in 1960, contains three signature elements of Gwendolyn Brooks’s poetic ______ compressed lines infused with bursts of vivid imagery; syncopated rhythms, largely inspired by the blues tradition; and a keen attention to everyday life in Brooks’s South Side Chicago neighborhood.',
       prompt:
@@ -214,6 +262,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q17',
+      domain: 'Standard English Conventions',
+      skill: 'Form, Structure, and Sense',
+      correctAnswer: 3,
       passage:
         'Neoclassical economic models assume that people consistently make rational economic decisions, but Francesca Gino of Harvard Business School makes no such assumption; behavioral economists such as Gino, whose research focuses on worker productivity, ______ that economic decision-making can in fact be highly irrational.',
       prompt:
@@ -223,6 +274,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q18',
+      domain: 'Standard English Conventions',
+      skill: 'Boundaries',
+      correctAnswer: 1,
       passage:
         'While the greater adjutant (*Leptoptilos dubius*) can be found in places such as Chhnuk Tru in Cambodia and Dong Khanthung in Laos, more than 80 percent of this endangered stork species is found in Assam, India. There, wildlife ______ is on the front lines of conservation efforts to bring adjutants back from near extinction.',
       prompt:
@@ -237,6 +291,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q19',
+      domain: 'Standard English Conventions',
+      skill: 'Form, Structure, and Sense',
+      correctAnswer: 1,
       passage:
         'The Roman dramatist Quintus Cicero’s *De petitione consulatus*, a political handbook, is an extant work: it can still be read. By contrast, lost works such as Quintus Cicero’s tragedy in the Greek style, *Erigones*—no copy of which exists—______ known to antiquarians only through references in extant works.',
       prompt:
@@ -246,6 +303,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q20',
+      domain: 'Expression of Ideas',
+      skill: 'Transitions',
+      correctAnswer: 1,
       passage:
         'Begoña Vila is a space scientist who works on the James Webb Space Telescope, or JWST. Thanks in part to Vila’s contributions, the telescope is now positioned near the Sun–Earth L2 Lagrange point, almost one million miles beyond Earth’s orbit. ______ the JWST’s predecessor, the Hubble Space Telescope, is only about 340 miles above Earth’s surface.',
       prompt:
@@ -255,6 +315,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q21',
+      domain: 'Expression of Ideas',
+      skill: 'Transitions',
+      correctAnswer: 3,
       passage:
         'Box modeling and contour modeling, methods used by digital artists to create three-dimensional elements for video games, typically require software to process geometric shapes numbering in the thousands. ______ these approaches are more economical than wire model methods, which require more powerful and expensive processors to manage polygons numbering in the millions.',
       prompt:
@@ -264,6 +327,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q22',
+      domain: 'Expression of Ideas',
+      skill: 'Transitions',
+      correctAnswer: 0,
       passage:
         'The total solar eclipse of June 5, 1302 BCE, was famously interpreted as a warning to the Chinese emperor. Another memorable solar eclipse occurred on April 21, 899 BCE, but unlike the 1302 BCE eclipse, the 899 BCE eclipse was annular. ______ the Moon did not cover the Sun completely, instead creating an annulus, or “ring of fire.”',
       prompt:
@@ -273,6 +339,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q23',
+      domain: 'Expression of Ideas',
+      skill: 'Rhetorical Synthesis',
+      correctAnswer: 0,
       passage:
         'While researching a topic, a student has taken the following notes:\n\n• Ezshwan Winding is a Hungarian American artist who specializes in encaustic painting, which follows a multistep process.\n• Step 1: Select and prepare the painting surface, often wood.\n• Step 2: Mix melted wax and resin together and add pigment for color to create the encaustic medium.\n• Step 3: Spread the medium on the surface in layers, applying heat to allow each layer to soften and fuse with the previous layers.\n• Step 4: Use various tools to carve patterns into the painting.\n\nThe student wants to describe the process of making and applying the encaustic medium.',
       prompt:
@@ -287,6 +356,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q24',
+      domain: 'Expression of Ideas',
+      skill: 'Rhetorical Synthesis',
+      correctAnswer: 1,
       passage:
         'While researching a topic, a student has taken the following notes:\n\n• The Tijuana Slough National Wildlife Refuge (NWR) is a protected natural area in California.\n• It encompasses 1,023 acres.\n• It was established to safeguard the habitat of the light-footed clapper rail, an endangered species.\n• The Tijuana Slough NWR is managed by the US Fish & Wildlife Service.\n• The US Fish & Wildlife Service limits human activities in the area.\n\nThe student wants to indicate the size of the Tijuana Slough NWR.',
       prompt:
@@ -301,6 +373,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q25',
+      domain: 'Expression of Ideas',
+      skill: 'Rhetorical Synthesis',
+      correctAnswer: 0,
       passage:
         'While researching a topic, a student has taken the following notes:\n\n• Jacob Lawrence was a US painter best known for *The Migration Series* (1940–41).\n• *The Migration Series* portrays scenes from the Great Migration of African Americans from the rural South to cities in the North and Midwest.\n• The series consists of 60 colorful semiabstract paintings, numbered 1 through 60.\n• The odd-numbered paintings are on display at the Phillips Collection in Washington, DC.\n• The even-numbered paintings are on display at the Museum of Modern Art in New York City.\n• Painting #12 depicts people buying tickets in a crowded train station.\n\nThe student wants to indicate where to go to view Painting #12 from Lawrence’s *Migration Series*.',
       prompt:
@@ -315,6 +390,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q26',
+      domain: 'Expression of Ideas',
+      skill: 'Rhetorical Synthesis',
+      correctAnswer: 0,
       passage:
         'While researching a topic, a student has taken the following notes:\n\n• River House is an Ancestral Puebloan dwelling site located in southeastern Utah.\n• It was built under a rock overhang and inhabited from approximately 910–1200 CE.\n• The overhanging rock ledges offered protection from heavy rain and snow.\n• Chimney Rock is an Ancestral Puebloan dwelling site located in southwestern Colorado.\n• It was built on relatively flat terrain and inhabited from approximately 925–1125 CE.\n• This level surface allowed for the construction of large terraced buildings.\n\nThe student wants to explain an advantage of the River House dwelling site.',
       prompt:
@@ -329,6 +407,9 @@ export const readingWriting2: TestModule = {
     {
       type: 'multiple-choice',
       id: 'rw2-q27',
+      domain: 'Expression of Ideas',
+      skill: 'Rhetorical Synthesis',
+      correctAnswer: 3,
       passage:
         'While researching a topic, a student has taken the following notes:\n\n• Kepler’s first law of planetary motion states that the orbit of a planet around the Sun is an ellipse.\n• The law also states that, in an elliptical orbit, the object being orbited is at one of the ellipse’s foci.\n• Kepler’s laws of planetary motion also apply to natural satellites, such as moons.\n• Mimas is a moon of Saturn that orbits the planet in 0.94 Earth days on average.\n• Mimas’s orbit is elliptical.\n\nThe student wants to provide an explanation and example of Kepler’s first law of planetary motion.',
       prompt:

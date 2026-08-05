@@ -305,6 +305,10 @@ export const report = query({
           type: question.type,
           choices:
             question.type === 'multiple-choice' ? question.choices : undefined,
+          // Classification, not an answer field — safe to send whether or not
+          // the attempt is submitted.
+          domain: question.domain ?? null,
+          skill: question.skill ?? null,
           yourAnswer,
           correctAnswer: released ? displayKey(question) : null,
           isCorrect,
@@ -323,6 +327,8 @@ export const report = query({
       }
     })
 
+    const allQuestions = modules.flatMap((m) => m.questions)
+
     return {
       status: attempt.status,
       testSlug: test.slug,
@@ -337,9 +343,49 @@ export const report = query({
       // hinges on, not a score of zero.
       graded: modules.reduce((n, m) => n + m.graded, 0),
       modules,
+      byDomain: breakdownBy(allQuestions, (q) => q.domain),
+      bySkill: breakdownBy(allQuestions, (q) => q.skill),
     }
   },
 })
+
+/**
+ * Accuracy grouped by a classification field (domain or skill), in the order
+ * each label first appears. Questions with no label (older content, or a
+ * transcription gap) are left out of the grouping rather than lumped into an
+ * "unknown" bucket — nothing to show the tutor there.
+ */
+function breakdownBy<
+  TQuestion extends {
+    domain: string | null
+    skill: string | null
+    yourAnswer: string | null
+    isCorrect: boolean | null
+  },
+>(questions: Array<TQuestion>, key: (q: TQuestion) => string | null) {
+  const order: Array<string> = []
+  const counts = new Map<
+    string,
+    { total: number; answered: number; correct: number; graded: number }
+  >()
+
+  for (const question of questions) {
+    const label = key(question)
+    if (label === null) continue
+
+    if (!counts.has(label)) {
+      order.push(label)
+      counts.set(label, { total: 0, answered: 0, correct: 0, graded: 0 })
+    }
+    const bucket = counts.get(label)!
+    bucket.total += 1
+    if (question.yourAnswer !== null) bucket.answered += 1
+    if (question.isCorrect !== null) bucket.graded += 1
+    if (question.isCorrect === true) bucket.correct += 1
+  }
+
+  return order.map((label) => ({ label, ...counts.get(label)! }))
+}
 
 /**
  * Whether a response is right: `null` when the question carries no key, which
