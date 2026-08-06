@@ -9,6 +9,7 @@
  */
 
 import type * as attempts from "../attempts.js";
+import type * as content_grading from "../content/grading.js";
 import type * as content_index from "../content/index.js";
 import type * as content_tests_satPracticeTest1_index from "../content/tests/satPracticeTest1/index.js";
 import type * as content_tests_satPracticeTest1_math1 from "../content/tests/satPracticeTest1/math1.js";
@@ -30,6 +31,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   attempts: typeof attempts;
+  "content/grading": typeof content_grading;
   "content/index": typeof content_index;
   "content/tests/satPracticeTest1/index": typeof content_tests_satPracticeTest1_index;
   "content/tests/satPracticeTest1/math1": typeof content_tests_satPracticeTest1_math1;

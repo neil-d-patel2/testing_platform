@@ -330,10 +330,21 @@ function AttemptDetail({
                   : isChoice
                     ? (CHOICE_LABELS[Number(question.correctAnswer)] ??
                       String(question.correctAnswer))
-                    : String(question.correctAnswer)
+                    : question.correctAnswer
 
-              const graded = keyLabel !== null && question.response !== null
-              const correct = graded && responseLabel === keyLabel
+              /*
+               * `isCorrect` is the server's verdict — the page must not
+               * re-derive it. Comparing the response against `keyLabel` here
+               * marked a right answer wrong on every grid-in with more than
+               * one accepted spelling.
+               *
+               * A blank stays neutral rather than red: the response chip
+               * beside it already says "blank", and colouring it as a wrong
+               * answer buries that distinction the tutor is looking for.
+               */
+              const graded =
+                question.isCorrect !== null && question.response !== null
+              const correct = question.isCorrect === true
 
               return (
                 <li

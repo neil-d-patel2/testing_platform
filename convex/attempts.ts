@@ -2,10 +2,11 @@ import { v } from 'convex/values'
 import { internal } from './_generated/api'
 import { internalMutation, mutation, query } from './_generated/server'
 import { getTest } from './content'
+import { displayKey, gradeResponse } from './content/grading'
 import { asTimeOption, moduleSeconds } from './timing'
 import type { Doc, Id } from './_generated/dataModel'
 import type { MutationCtx, QueryCtx } from './_generated/server'
-import type { Question, Test } from './content/types'
+import type { Test } from './content/types'
 import type { TimeOption } from './timing'
 
 /** Argument/field validator for the time accommodation. */
@@ -296,7 +297,7 @@ export const report = query({
     const modules = test.modules.map((module) => {
       const questions = module.questions.map((question, index) => {
         const yourAnswer = byQuestion.get(question.id) ?? null
-        const isCorrect = released ? grade(question, yourAnswer) : null
+        const isCorrect = released ? gradeResponse(question, yourAnswer) : null
 
         return {
           id: question.id,
@@ -385,38 +386,6 @@ function breakdownBy<
   }
 
   return order.map((label) => ({ label, ...counts.get(label)! }))
-}
-
-/**
- * Whether a response is right: `null` when the question carries no key, which
- * is not the same as wrong.
- */
-function grade(question: Question, response: string | null): boolean | null {
-  if (question.type === 'multiple-choice') {
-    if (question.correctAnswer === undefined) return null
-    return response !== null && Number(response) === question.correctAnswer
-  }
-
-  const accepted = question.acceptedAnswers
-  if (!accepted || accepted.length === 0) return null
-  if (response === null) return false
-
-  // Grid-ins are compared as trimmed, case-insensitive strings — every
-  // spelling that counts has to be listed in `acceptedAnswers`.
-  const normalized = response.trim().toLowerCase()
-  return accepted.some((value) => value.trim().toLowerCase() === normalized)
-}
-
-/** The key in the same shape a stored answer takes, or `null` if unsupplied. */
-function displayKey(question: Question): string | null {
-  if (question.type === 'multiple-choice') {
-    return question.correctAnswer === undefined
-      ? null
-      : String(question.correctAnswer)
-  }
-  return question.acceptedAnswers?.length
-    ? question.acceptedAnswers.join(' or ')
-    : null
 }
 
 /**

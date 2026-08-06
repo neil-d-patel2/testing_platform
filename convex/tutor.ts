@@ -1,6 +1,7 @@
 import { v } from 'convex/values'
 import { env, query } from './_generated/server'
 import { getTest } from './content'
+import { displayKey, gradeResponse } from './content/grading'
 import type { QueryCtx } from './_generated/server'
 import type { Id } from './_generated/dataModel'
 
@@ -134,10 +135,14 @@ export const getAttempt = query({
             question.type === 'multiple-choice' ? question.choices : undefined,
           // `null` means "no key supplied for this question", which must read
           // as ungradable rather than as a wrong answer.
-          correctAnswer:
-            question.type === 'multiple-choice'
-              ? (question.correctAnswer ?? null)
-              : (question.acceptedAnswers?.join(' or ') ?? null),
+          correctAnswer: displayKey(question),
+          /*
+           * Marked here, not in the browser. The page used to compare the
+           * response against `correctAnswer` as strings, which fails the
+           * moment a grid-in accepts more than one spelling: a student who
+           * answered "1.2" was shown red against a key of "1.2 or 6/5".
+           */
+          isCorrect: gradeResponse(question, response),
           response,
         }
       }),

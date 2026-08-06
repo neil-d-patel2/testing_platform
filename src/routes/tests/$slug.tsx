@@ -722,11 +722,17 @@ function AttemptRunner({
               </tr>
             </thead>
             <tbody>
-              {question.table.rows.map((row) => (
-                <tr key={row.join('|')}>
-                  {row.map((cell) => (
+              {/*
+                Keyed by position, not by content. A data table repeating a
+                value — two zeros in a row, the same year in two rows — is
+                ordinary, and keying on the text would collide and drop cells.
+                Rows never reorder here: the table is static content.
+              */}
+              {question.table.rows.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {row.map((cell, cellIndex) => (
                     <td
-                      key={cell}
+                      key={cellIndex}
                       className="border border-neutral-300 px-3 py-2 align-top text-black"
                     >
                       {cell}
