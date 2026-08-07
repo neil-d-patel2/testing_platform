@@ -336,7 +336,6 @@ export const report = query({
       }
     })
 
-    const allQuestions = modules.flatMap((m) => m.questions)
     const sections = scoreSections(modules)
 
     return {
@@ -357,14 +356,21 @@ export const report = query({
       // `convex/scoring.ts`.
       totalScore: totalScore(sections),
       modules,
-      byDomain: breakdownBy(allQuestions, (q) => q.domain),
-      bySkill: breakdownBy(allQuestions, (q) => q.skill),
     }
   },
 })
 
+/** A question, reduced to what the accuracy breakdowns actually read. */
+type ClassifiedQuestion = {
+  domain: string | null
+  skill: string | null
+  yourAnswer: string | null
+  isCorrect: boolean | null
+}
+
 /**
- * The two scored sections, each with its raw counts and its scaled 200–800.
+ * The two scored sections, each with its raw counts, its scaled 200–800, and
+ * its own domain → skill accuracy breakdown.
  *
  * Modules are folded into their section before the scale is applied, because
  * the chart converts a count out of the whole section — adding two per-module
@@ -372,6 +378,11 @@ export const report = query({
  * the output so a test that omits a section still yields a row (with zero
  * questions and therefore no score) rather than silently dropping it from the
  * total.
+ *
+ * The breakdown is nested and per-section rather than two flat lists across
+ * the whole test: a skill belongs to exactly one domain, and a domain to
+ * exactly one section, so the flat version made the reader reconstruct that
+ * tree by eye to answer "where am I losing Math points".
  */
 function scoreSections(
   modules: Array<{
@@ -380,6 +391,7 @@ function scoreSections(
     answered: number
     correct: number
     graded: number
+    questions: Array<ClassifiedQuestion>
   }>,
 ) {
   return SECTION_ORDER.map((section) => {
@@ -399,24 +411,38 @@ function scoreSections(
       // counts out of 54 and 44, so scoring 20 of 30 graded questions against
       // it would report the student's missing answer key as missed questions.
       score: graded === total ? sectionScore(section, correct, total) : null,
+      domains: breakdownByDomain(own.flatMap((m) => m.questions)),
     }
   })
 }
 
 /**
- * Accuracy grouped by a classification field (domain or skill), in the order
- * each label first appears. Questions with no label (older content, or a
- * transcription gap) are left out of the grouping rather than lumped into an
- * "unknown" bucket — nothing to show the tutor there.
+ * Accuracy by domain, each domain carrying its own skills.
+ *
+ * Both levels keep the order each label first appears in the test rather than
+ * sorting by accuracy — the tutor reads these against the printed answer key,
+ * and a list that reorders itself per student is one they can't scan.
  */
-function breakdownBy<
-  TQuestion extends {
-    domain: string | null
-    skill: string | null
-    yourAnswer: string | null
-    isCorrect: boolean | null
-  },
->(questions: Array<TQuestion>, key: (q: TQuestion) => string | null) {
+function breakdownByDomain(questions: Array<ClassifiedQuestion>) {
+  return tally(questions, (q) => q.domain).map((domain) => ({
+    ...domain,
+    skills: tally(
+      questions.filter((q) => q.domain === domain.label),
+      (q) => q.skill,
+    ),
+  }))
+}
+
+/**
+ * Accuracy grouped by a classification field, in the order each label first
+ * appears. Questions with no label (older content, or a transcription gap) are
+ * left out of the grouping rather than lumped into an "unknown" bucket —
+ * nothing to show the tutor there.
+ */
+function tally(
+  questions: Array<ClassifiedQuestion>,
+  key: (q: ClassifiedQuestion) => string | null,
+) {
   const order: Array<string> = []
   const counts = new Map<
     string,

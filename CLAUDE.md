@@ -152,6 +152,32 @@ key. Check the built bundle if in doubt:
 Vercel project `neil-d-patel2s-projects/testing_platform`, GitHub-connected, so
 `git push` deploys. Nitro auto-detects Vercel and emits `.vercel/output`.
 
+**`git push` deploys both halves.** The build command is
+`scripts/vercel-build.sh`, which runs `convex deploy --cmd 'pnpm build'`: it
+pushes `convex/` first and builds the frontend only if that succeeded, handing
+the build the URL of the deployment it just pushed to. That ordering is the
+whole point — a frontend newer than its backend is a hard crash (a query
+returning a field the deployed functions don't have yet), so the two must ship
+together, not race. A GitHub Action on `git push` would race Vercel's build
+rather than order against it, which is why this lives in the build command.
+
+Two consequences worth knowing:
+
+- **Only production builds push.** The script skips the push unless
+  `VERCEL_ENV=production`, because preview builds point at the same deployment
+  as the live site — a branch's half-written backend would otherwise land on
+  everyone at once. Previews build the frontend only.
+- **A production build with no `CONVEX_DEPLOY_KEY` fails loudly** instead of
+  shipping a frontend against a stale backend. Mint the key with
+  `npx convex deployment token create vercel --deployment dev` (`--prod` once
+  there is a prod deployment) and set it in Vercel → Settings → Environment
+  Variables, Production scope only. `VITE_CONVEX_URL` no longer needs to be set
+  there — `--cmd-url-env-var-name` supplies it — but `VITE_CONVEX_SITE_URL`
+  still does, and must point at the same deployment.
+
+Pushing by hand is still `npx convex dev --once`; that's the only way to update
+the backend without a deploy, and it's what to use while developing.
+
 **Currently running on Clerk + Convex _dev_ credentials.** The live site shares
 the `clever-alligator-313` Convex dev deployment with localhost — same data.
 Clerk dev caps at 100 users and shows a dev banner. Going to real production

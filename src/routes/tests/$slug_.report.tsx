@@ -1,7 +1,7 @@
 import { convexQuery } from '@convex-dev/react-query'
 import { useQuery } from '@tanstack/react-query'
 import { Link, createFileRoute, redirect } from '@tanstack/react-router'
-import { Check, Minus, X } from 'lucide-react'
+import { Check, ChevronRight, Minus, X } from 'lucide-react'
 
 import RichText from '#/components/RichText.tsx'
 import ScoreGauge from '#/components/ScoreGauge.tsx'
@@ -20,7 +20,7 @@ export const Route = createFileRoute('/tests/$slug_/report')({
 
 type Report = NonNullable<FunctionReturnType<typeof api.attempts.report>>
 type ReportQuestion = Report['modules'][number]['questions'][number]
-type BreakdownRow = Report['byDomain'][number]
+type Domain = Report['sections'][number]['domains'][number]
 
 /**
  * A response in the form a student reads it: the letter and the choice text
@@ -189,45 +189,34 @@ function ReportPage() {
         </section>
 
         <h2 className="font-display mt-12 text-lg font-semibold">By section</h2>
-        <div className="mt-4 grid gap-8 border-y border-neutral-200 py-8 sm:grid-cols-2 sm:gap-0 sm:divide-x sm:divide-neutral-200">
+        <div className="mt-4 grid gap-10 border-y border-neutral-200 py-8 sm:grid-cols-2 sm:gap-0 sm:divide-x sm:divide-neutral-200">
           {report.sections.map((section) => (
-            <div
-              key={section.section}
-              className="flex flex-col items-center px-4 text-center"
-            >
-              <h3 className="font-display text-lg font-semibold">
-                {section.label}
-              </h3>
-              <div className="mt-3">
-                <ScoreGauge score={section.score} label={section.label} />
+            <div key={section.section} className="sm:px-6">
+              <div className="flex flex-col items-center text-center">
+                <h3 className="font-display text-lg font-semibold">
+                  {section.label}
+                </h3>
+                <div className="mt-3">
+                  <ScoreGauge score={section.score} label={section.label} />
+                </div>
+                <p className="mt-2 text-[15px] text-neutral-700">
+                  <span className="font-medium tabular-nums">
+                    {section.correct} of {section.total}
+                  </span>{' '}
+                  correct · {section.answered} answered
+                </p>
               </div>
-              <p className="mt-2 text-[15px] text-neutral-700">
-                <span className="font-medium tabular-nums">
-                  {section.correct} of {section.total}
-                </span>{' '}
-                correct · {section.answered} answered
-              </p>
+
+              {section.domains.length > 0 ? (
+                <ul className="mt-6 divide-y divide-neutral-200 border-t border-neutral-200">
+                  {section.domains.map((domain) => (
+                    <DomainRow key={domain.label} domain={domain} />
+                  ))}
+                </ul>
+              ) : null}
             </div>
           ))}
         </div>
-
-        {report.byDomain.length > 0 ? (
-          <>
-            <h2 className="font-display mt-12 text-lg font-semibold">
-              By domain
-            </h2>
-            <AccuracyTable rows={report.byDomain} />
-          </>
-        ) : null}
-
-        {report.bySkill.length > 0 ? (
-          <>
-            <h2 className="font-display mt-12 text-lg font-semibold">
-              By skill
-            </h2>
-            <AccuracyTable rows={report.bySkill} />
-          </>
-        ) : null}
 
         <h2 className="font-display mt-12 text-lg font-semibold">
           Your answers
@@ -302,39 +291,82 @@ function ReportPage() {
 }
 
 /**
- * Accuracy rows for a breakdown (by domain or by skill). Ungraded rows (no
- * answer key yet) show the question count with no percentage, same logic as
- * the "Not scored" summary above — a missing key isn't a 0%.
+ * Accuracy as a percentage of the questions that could be marked, or `null`
+ * when none could. Ungraded rows aren't 0% — same rule as the summary card.
  */
-function AccuracyTable({ rows }: { rows: Array<BreakdownRow> }) {
-  return (
-    <ul className="mt-4 divide-y divide-neutral-200 border-y border-neutral-200">
-      {rows.map((row) => {
-        const percent =
-          row.graded > 0 ? Math.round((row.correct / row.graded) * 100) : null
+function accuracy(row: { correct: number; graded: number }) {
+  return row.graded > 0 ? Math.round((row.correct / row.graded) * 100) : null
+}
 
-        return (
-          <li key={row.label} className="py-3">
-            <div className="flex items-baseline justify-between gap-4">
-              <span className="text-[15px]">{row.label}</span>
-              <span className="shrink-0 text-sm tabular-nums text-neutral-600">
-                {percent !== null
-                  ? `${row.correct} of ${row.graded} correct · ${percent}%`
-                  : `${row.total} question${row.total === 1 ? '' : 's'} · not scored`}
-              </span>
+/** `12 of 15 · 80%`, or the question count when there's no key to mark against. */
+function countLabel(row: { correct: number; graded: number; total: number }) {
+  const percent = accuracy(row)
+  return percent === null
+    ? `${row.total} question${row.total === 1 ? '' : 's'} · not scored`
+    : `${row.correct} of ${row.graded} · ${percent}%`
+}
+
+/**
+ * One domain, with its skills folded away behind a disclosure.
+ *
+ * A native `<details>` rather than React state: it works before hydration —
+ * which matters on a report a student may open and immediately scroll — and
+ * brings its own keyboard and screen-reader behaviour. Collapsed by default,
+ * because the domain list is the summary and the skills are the drill-down.
+ */
+function DomainRow({ domain }: { domain: Domain }) {
+  const percent = accuracy(domain)
+
+  return (
+    <li>
+      <details className="group">
+        {/*
+          The bar lives inside the summary, not after it, so every domain
+          carries one whether or not it's expanded — a row that grew a bar on
+          opening would read as the disclosure having changed the data.
+        */}
+        <summary
+          className={`cursor-pointer list-none py-3 [&::-webkit-details-marker]:hidden ${FOCUS_RING}`}
+        >
+          <div className="flex items-baseline gap-2">
+            <ChevronRight
+              size={14}
+              aria-hidden="true"
+              className="shrink-0 translate-y-0.5 text-neutral-500 transition-transform group-open:rotate-90"
+            />
+            <span className="min-w-0 flex-1 text-[15px]">{domain.label}</span>
+            <span className="shrink-0 text-sm tabular-nums text-neutral-600">
+              {countLabel(domain)}
+            </span>
+          </div>
+
+          {percent !== null ? (
+            <div className="mt-2 ml-6 h-1.5 rounded-full bg-neutral-100">
+              <div
+                className="h-1.5 rounded-full bg-black"
+                style={{ width: `${percent}%` }}
+              />
             </div>
-            {percent !== null ? (
-              <div className="mt-2 h-1.5 rounded-full bg-neutral-100">
-                <div
-                  className="h-1.5 rounded-full bg-black"
-                  style={{ width: `${percent}%` }}
-                />
+          ) : null}
+        </summary>
+
+        {/* Indented to the domain's label, so the nesting reads without a rule. */}
+        <ul className="mb-4 ml-6 space-y-2">
+          {domain.skills.map((skill) => (
+            <li key={skill.label}>
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="min-w-0 text-sm text-neutral-700">
+                  {skill.label}
+                </span>
+                <span className="shrink-0 text-xs tabular-nums text-neutral-500">
+                  {countLabel(skill)}
+                </span>
               </div>
-            ) : null}
-          </li>
-        )
-      })}
-    </ul>
+            </li>
+          ))}
+        </ul>
+      </details>
+    </li>
   )
 }
 
