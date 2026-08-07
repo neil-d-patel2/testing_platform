@@ -197,12 +197,20 @@ $400/yr subscription with the tutor's own tests. Tests are hard-coded into the
 repo by the tutor; students sign in, pick a test, and take it under a time
 limit. `SPEC.md` holds the build plan and is the brief to hand an agent.
 
-SAT Practice Tests 1 and 2 live in `convex/content/tests/satPracticeTest1/` and
-`…/satPracticeTest2/` (98 questions each, four modules each), and both carry
-their full answer key with College Board domain and skill codes. `correctAnswer`
-and `acceptedAnswers` are still **optional** in the types, though: a test can be
+SAT Practice Tests 1, 2, and 3 live in `convex/content/tests/satPracticeTest1/`,
+`…2/`, and `…3/` (98 questions each, four modules each), and all three carry a
+full answer key with College Board domain and skill codes. `correctAnswer` and
+`acceptedAnswers` are still **optional** in the types, though: a test can be
 transcribed and taken before its key is supplied, so scoring must treat a
 missing key as "not gradable", not "wrong".
+
+**A key is all-or-nothing per section.** `scoreSections` only scales a section
+when `graded === total`, so a single unkeyed question costs that section its
+200–800 score _and_ costs the report its 1600 total. Test 3 spent a while in
+exactly that state — its Math Module 1 question 18 shipped unkeyed because the
+source omitted the rainfall graph, and the tutor supplied the answer later. If a
+report shows raw counts where a score belongs, one missing `correctAnswer` is
+the first thing to check.
 
 **Adding a test is two edits.** Write the four module files plus an `index.ts`
 under `convex/content/tests/<name>/`, then add the `Test` to `ALL_TESTS` in
