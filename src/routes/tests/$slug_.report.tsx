@@ -6,7 +6,6 @@ import { Check, Minus, X } from 'lucide-react'
 import RichText from '#/components/RichText.tsx'
 import { CHOICE_LABELS, FOCUS_RING, formatDuration } from '#/lib/exam-ui.ts'
 import { api } from '../../../convex/_generated/api'
-import { TIME_OPTION_LABELS } from '../../../convex/timing'
 import type { FunctionReturnType } from 'convex/server'
 
 export const Route = createFileRoute('/tests/$slug_/report')({
@@ -117,9 +116,9 @@ function ReportPage() {
         >
           {report.graded === 0 ? (
             /*
-              Practice Test 1 was transcribed without its answer key. Reporting
-              a score of zero would read as 98 wrong answers, so the screen says
-              plainly that there is nothing to mark against.
+              A test can be transcribed and taken before its answer key is
+              supplied. Reporting a 400 would read as 98 wrong answers, so the
+              screen says plainly that there is nothing to mark against.
             */
             <>
               <p className="font-display text-2xl font-semibold">Not scored</p>
@@ -129,14 +128,44 @@ function ReportPage() {
                 saved, and your tutor can see them.
               </p>
             </>
+          ) : report.totalScore !== null ? (
+            <>
+              <p className="font-display text-5xl font-bold tracking-tight tabular-nums">
+                {report.totalScore}
+              </p>
+              <p className="mt-1 text-[15px] text-neutral-600">
+                estimated score out of 1600
+              </p>
+              <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-3">
+                {report.sections.map((section) => (
+                  <div key={section.section}>
+                    <dt className="text-sm text-neutral-600">
+                      {section.label}
+                    </dt>
+                    <dd className="font-display text-2xl font-semibold tabular-nums">
+                      {section.score}
+                      <span className="ml-2 align-middle text-sm font-normal text-neutral-600">
+                        {section.correct}/{section.total}
+                      </span>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </>
           ) : (
+            /*
+              Some key, but not all of it — the scaled-score chart converts a
+              count out of the full section, so there's no honest place to put
+              a partial one. Raw counts until the key is complete.
+            */
             <>
               <p className="font-display text-4xl font-semibold tabular-nums">
                 {report.correct}
                 <span className="text-neutral-400"> / {report.graded}</span>
               </p>
               <p className="mt-2 text-[15px] text-neutral-700">
-                correct on the {report.graded} questions with an answer key.
+                correct on the {report.graded} questions with an answer key. A
+                scaled score needs a key for every question.
               </p>
             </>
           )}
@@ -156,11 +185,11 @@ function ReportPage() {
                 </dd>
               </div>
             ) : null}
-            {report.timeOption ? (
+            {report.graded > 0 ? (
               <div>
-                <dt className="text-neutral-600">Timing</dt>
-                <dd className="mt-0.5 font-medium">
-                  {TIME_OPTION_LABELS[report.timeOption]}
+                <dt className="text-neutral-600">Correct</dt>
+                <dd className="mt-0.5 font-medium tabular-nums">
+                  {report.correct}/{report.total}
                 </dd>
               </div>
             ) : null}

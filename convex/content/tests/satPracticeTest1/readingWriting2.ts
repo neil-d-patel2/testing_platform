@@ -4,6 +4,7 @@ import type { TestModule } from '../../types'
 export const readingWriting2: TestModule = {
   id: 'rw-2',
   title: 'Reading and Writing — Module 2',
+  section: 'reading-writing',
   timeLimitSeconds: 32 * 60,
   // The break between Reading and Writing and Math, as on the real exam.
   breakAfterSeconds: 10 * 60,

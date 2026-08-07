@@ -3,10 +3,17 @@ import { internal } from './_generated/api'
 import { internalMutation, mutation, query } from './_generated/server'
 import { getTest } from './content'
 import { displayKey, gradeResponse } from './content/grading'
+import {
+  SECTION_LABELS,
+  SECTION_ORDER,
+  sectionScore,
+  totalScore,
+} from './scoring'
 import { asTimeOption, moduleSeconds } from './timing'
 import type { Doc, Id } from './_generated/dataModel'
 import type { MutationCtx, QueryCtx } from './_generated/server'
 import type { Test } from './content/types'
+import type { TestSection } from './scoring'
 import type { TimeOption } from './timing'
 
 /** Argument/field validator for the time accommodation. */
@@ -320,6 +327,7 @@ export const report = query({
       return {
         id: module.id,
         title: module.title,
+        section: module.section,
         total: questions.length,
         answered: questions.filter((q) => q.yourAnswer !== null).length,
         correct: questions.filter((q) => q.isCorrect === true).length,
@@ -329,6 +337,7 @@ export const report = query({
     })
 
     const allQuestions = modules.flatMap((m) => m.questions)
+    const sections = scoreSections(modules)
 
     return {
       status: attempt.status,
@@ -343,12 +352,56 @@ export const report = query({
       // Zero here is the "no answer key supplied" state the whole screen
       // hinges on, not a score of zero.
       graded: modules.reduce((n, m) => n + m.graded, 0),
+      sections,
+      // 400–1600, or `null` when the scale can't be applied honestly. See
+      // `convex/scoring.ts`.
+      totalScore: totalScore(sections),
       modules,
       byDomain: breakdownBy(allQuestions, (q) => q.domain),
       bySkill: breakdownBy(allQuestions, (q) => q.skill),
     }
   },
 })
+
+/**
+ * The two scored sections, each with its raw counts and its scaled 200–800.
+ *
+ * Modules are folded into their section before the scale is applied, because
+ * the chart converts a count out of the whole section — adding two per-module
+ * scores would produce a number the SAT never reports. `SECTION_ORDER` drives
+ * the output so a test that omits a section still yields a row (with zero
+ * questions and therefore no score) rather than silently dropping it from the
+ * total.
+ */
+function scoreSections(
+  modules: Array<{
+    section: TestSection
+    total: number
+    answered: number
+    correct: number
+    graded: number
+  }>,
+) {
+  return SECTION_ORDER.map((section) => {
+    const own = modules.filter((m) => m.section === section)
+    const total = own.reduce((n, m) => n + m.total, 0)
+    const correct = own.reduce((n, m) => n + m.correct, 0)
+    const graded = own.reduce((n, m) => n + m.graded, 0)
+
+    return {
+      section,
+      label: SECTION_LABELS[section],
+      total,
+      answered: own.reduce((n, m) => n + m.answered, 0),
+      correct,
+      graded,
+      // Only a fully graded section gets a scaled score: the chart's rows are
+      // counts out of 54 and 44, so scoring 20 of 30 graded questions against
+      // it would report the student's missing answer key as missed questions.
+      score: graded === total ? sectionScore(section, correct, total) : null,
+    }
+  })
+}
 
 /**
  * Accuracy grouped by a classification field (domain or skill), in the order

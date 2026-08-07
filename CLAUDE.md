@@ -160,9 +160,24 @@ repo by the tutor; students sign in, pick a test, and take it under a time
 limit. `SPEC.md` holds the build plan and is the brief to hand an agent.
 
 SAT Practice Test 1 lives in `convex/content/tests/satPracticeTest1/` (98
-questions, four modules). It has **no answer key** — `correctAnswer` and
-`acceptedAnswers` are optional and every question omits them, so nothing is
-gradable yet. Scoring must treat a missing key as "not gradable", not "wrong".
+questions, four modules), and now carries its full answer key. `correctAnswer`
+and `acceptedAnswers` are still **optional** in the types, though: a test can be
+transcribed and taken before its key is supplied, so scoring must treat a
+missing key as "not gradable", not "wrong".
+
+**Reports are scored on the 200–800 scale, not as a percentage.** Every module
+declares a `section` (`reading-writing` | `math`); `convex/scoring.ts` folds the
+two modules of a section into one raw count and looks it up in the tutor's
+conversion chart — 54 questions for Reading and Writing, 44 for Math — for a
+total out of 1600. Two consequences:
+
+- The chart converts a count out of the **whole** section. A section whose key
+  is incomplete gets no scaled score (`null`), and one missing section score
+  makes the total `null` too, because half a total reads as a catastrophic
+  score rather than an incomplete report. The report falls back to raw counts.
+- `convex/scoring.ts` holds no question content, so like `convex/timing.ts` it
+  sits outside the `convex/content/` fence. Scoring still happens server-side in
+  `attempts.report` for the same reason grading does — one definition.
 
 Test content is deliberately unreachable from `src/`: it is imported only by
 Convex functions, and `tests.get` runs it through `stripAnswers` before it

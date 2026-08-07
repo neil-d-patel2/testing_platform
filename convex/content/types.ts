@@ -8,6 +8,10 @@
  * a student — see `stripAnswers` in `./index.ts`.
  */
 
+import type { TestSection } from '../scoring'
+
+export type { TestSection }
+
 /** A tabular stimulus attached to a question. */
 export interface QuestionTable {
   caption?: string
@@ -84,6 +88,13 @@ export type Question = MultipleChoiceQuestion | GridInQuestion
 export interface TestModule {
   id: string
   title: string
+  /**
+   * Which scored section this module counts toward. Modules sharing a section
+   * have their correct answers added together before the scaled-score table in
+   * `convex/scoring.ts` is applied — a section score is a function of all 54
+   * (or 44) questions, never of one module.
+   */
+  section: TestSection
   timeLimitSeconds: number
   /**
    * A mandatory break that follows this module, in seconds. Omitted means the

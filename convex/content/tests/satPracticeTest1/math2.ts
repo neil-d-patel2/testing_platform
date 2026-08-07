@@ -4,6 +4,7 @@ import type { TestModule } from '../../types'
 export const math2: TestModule = {
   id: 'math-2',
   title: 'Math — Module 2',
+  section: 'math',
   timeLimitSeconds: 35 * 60,
   questions: [
     {
