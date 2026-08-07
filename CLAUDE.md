@@ -135,6 +135,12 @@ key. Check the built bundle if in doubt:
   with the landing page. The screens around it — instructions, break,
   submitted, `/tests/$slug/report` — are light for the same reason, and so
   that starting a test isn't a flash from black to white.
+- **The score gauges are the only color on the report.** `ScoreGauge` draws each
+  section's 200–800 as an arc meter; its two blues (fill `#184f95`, track
+  `#86b6ef`) are a validated ordinal pair against a white surface, and the track
+  is a lighter step of the _same_ ramp rather than gray on purpose. One accent
+  for every score — no red-to-green severity ramp, which would editorialize a
+  practice score. The numerals stay ink black so nothing depends on hue.
 - **Type: Inter for everything, Plus Jakarta Sans for display.** Both are
   `@theme` tokens in `src/styles.css` — `font-sans` (already on `<body>`, so
   it's the default) and `font-display`. Use the `font-display` utility on

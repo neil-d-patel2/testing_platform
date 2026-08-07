@@ -4,6 +4,7 @@ import { Link, createFileRoute, redirect } from '@tanstack/react-router'
 import { Check, Minus, X } from 'lucide-react'
 
 import RichText from '#/components/RichText.tsx'
+import ScoreGauge from '#/components/ScoreGauge.tsx'
 import { CHOICE_LABELS, FOCUS_RING, formatDuration } from '#/lib/exam-ui.ts'
 import { api } from '../../../convex/_generated/api'
 import type { FunctionReturnType } from 'convex/server'
@@ -129,28 +130,19 @@ function ReportPage() {
               </p>
             </>
           ) : report.totalScore !== null ? (
+            /*
+              The one hero figure on the page — body sans, not `font-display`,
+              and proportional figures: `tabular-nums` pads every digit to the
+              width of a zero, which reads as loose spacing at this size.
+              Tabular is for the columns of counts further down.
+            */
             <>
-              <p className="font-display text-5xl font-bold tracking-tight tabular-nums">
+              <p className="text-5xl font-bold tracking-tight">
                 {report.totalScore}
               </p>
               <p className="mt-1 text-[15px] text-neutral-600">
                 estimated score out of 1600
               </p>
-              <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-3">
-                {report.sections.map((section) => (
-                  <div key={section.section}>
-                    <dt className="text-sm text-neutral-600">
-                      {section.label}
-                    </dt>
-                    <dd className="font-display text-2xl font-semibold tabular-nums">
-                      {section.score}
-                      <span className="ml-2 align-middle text-sm font-normal text-neutral-600">
-                        {section.correct}/{section.total}
-                      </span>
-                    </dd>
-                  </div>
-                ))}
-              </dl>
             </>
           ) : (
             /*
@@ -197,22 +189,41 @@ function ReportPage() {
         </section>
 
         <h2 className="font-display mt-12 text-lg font-semibold">By section</h2>
-        <ul className="mt-4 divide-y divide-neutral-200 border-y border-neutral-200">
-          {report.modules.map((module) => (
-            <li
-              key={module.id}
-              className="flex items-baseline justify-between gap-4 py-3"
+        <div className="mt-4 grid gap-8 border-y border-neutral-200 py-8 sm:grid-cols-2 sm:gap-0 sm:divide-x sm:divide-neutral-200">
+          {report.sections.map((section) => (
+            <div
+              key={section.section}
+              className="flex flex-col items-center px-4 text-center"
             >
-              <span className="text-[15px]">{module.title}</span>
-              <span className="shrink-0 text-sm tabular-nums text-neutral-600">
-                {module.answered} of {module.total} answered
-                {module.graded > 0
-                  ? ` · ${module.correct} of ${module.graded} correct`
-                  : ''}
-              </span>
-            </li>
+              <h3 className="font-display text-lg font-semibold">
+                {section.label}
+              </h3>
+              <div className="mt-3">
+                <ScoreGauge score={section.score} label={section.label} />
+              </div>
+              <p className="mt-2 text-[15px] text-neutral-700">
+                <span className="font-medium tabular-nums">
+                  {section.correct} of {section.total}
+                </span>{' '}
+                correct · {section.answered} answered
+              </p>
+              {/*
+                Numbered within the section rather than titled: the module's
+                own title starts with the section name, which the heading two
+                lines up already said.
+              */}
+              <ul className="mt-3 space-y-1 text-sm text-neutral-600">
+                {report.modules
+                  .filter((module) => module.section === section.section)
+                  .map((module, index) => (
+                    <li key={module.id} className="tabular-nums">
+                      Module {index + 1} — {module.correct} of {module.total}
+                    </li>
+                  ))}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
 
         {report.byDomain.length > 0 ? (
           <>
