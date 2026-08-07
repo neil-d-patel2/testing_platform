@@ -212,6 +212,27 @@ source omitted the rainfall graph, and the tutor supplied the answer later. If a
 report shows raw counts where a score belongs, one missing `correctAnswer` is
 the first thing to check.
 
+**A test may carry its own curve.** `Test.scale` is an optional `ScoreScale`;
+omitting it uses `DEFAULT_SCALE` in `convex/scoring.ts`. Tests 1–3 omit it.
+Tests 4–6 each ship a `scale.ts` transcribed from
+`exams/exam<n>/exam<n>_curve.txt` — they were calibrated as harder forms, so the
+same raw count converts higher there than on Tests 1–3, and scoring them against
+the default chart would report wrong numbers. Two rules:
+
+- **Never edit a released test's curve.** Reports are computed on read, not
+  stored, so changing the chart silently changes the score of every past
+  attempt — a student reopening an old report would see a different number.
+- Transcribe curves with a script and check the round trip. Each array must be
+  exactly `questions + 1` long (55 and 45); `sectionScore` returns `null` on a
+  length mismatch, so a short array degrades to "no score" rather than to a
+  wrong one, but it still needs catching.
+
+**Answer keys drifted to Title Case at Test 4** ("Linear Functions" where Tests
+1–3 wrote "Linear functions"). The report groups its accuracy breakdown by the
+exact `skill` string, so math labels are lowercased on the way in to keep one
+vocabulary across the platform. Reading and Writing skill names were already
+Title Case in every key and are left as-is.
+
 **Adding a test is two edits.** Write the four module files plus an `index.ts`
 under `convex/content/tests/<name>/`, then add the `Test` to `ALL_TESTS` in
 `convex/content/index.ts`. Everything downstream — the test list, the runner,

@@ -9,8 +9,12 @@
  *
  * The tables below are the tutor's conversion chart, transcribed verbatim.
  * They are indexed by number correct, so `READING_WRITING[54] === 800` and
- * `MATH[0] === 200`. Real SAT scales differ per test form; this one is the
- * estimate used for every test on the platform until a test carries its own.
+ * `MATH[0] === 200`.
+ *
+ * Real SAT scales differ per test form, so this is only the **default**: a
+ * `Test` may carry its own `scale`, and Practice Tests 4–6 do — each ships a
+ * difficulty-adjusted curve derived from this one. Tests 1–3 have no curve of
+ * their own and fall back to the chart here.
  *
  * Contains no question content, so — like `convex/timing.ts` — this module is
  * outside the `convex/content/` fence. Scoring still happens on the server
@@ -18,6 +22,15 @@
  */
 
 export type TestSection = 'reading-writing' | 'math'
+
+/**
+ * A full conversion chart: for each section, scaled scores indexed by number
+ * correct. Every array must be exactly `questions + 1` long — `sectionScore`
+ * refuses to score a section whose length doesn't match the raw count it is
+ * handed, which is what stops a mis-transcribed curve from quietly reporting
+ * wrong numbers.
+ */
+export type ScoreScale = Record<TestSection, ReadonlyArray<number>>
 
 export const SECTION_LABELS: Record<TestSection, string> = {
   'reading-writing': 'Reading and Writing',
@@ -41,14 +54,18 @@ const MATH: ReadonlyArray<number> = [
   610, 620, 640, 650, 660, 680, 690, 700, 720, 730, 750, 760, 770, 790, 800,
 ]
 
-const SCALES: Record<TestSection, ReadonlyArray<number>> = {
+/** Used by any test that doesn't declare a `scale` of its own. */
+export const DEFAULT_SCALE: ScoreScale = {
   'reading-writing': READING_WRITING,
   math: MATH,
 }
 
 /** How many questions the scale for this section expects. */
-export function sectionQuestionCount(section: TestSection): number {
-  return SCALES[section].length - 1
+export function sectionQuestionCount(
+  section: TestSection,
+  scale: ScoreScale = DEFAULT_SCALE,
+): number {
+  return scale[section].length - 1
 }
 
 /**
@@ -64,11 +81,12 @@ export function sectionScore(
   section: TestSection,
   correct: number,
   outOf: number,
+  scale: ScoreScale = DEFAULT_SCALE,
 ): number | null {
-  const scale = SCALES[section]
-  if (outOf !== scale.length - 1) return null
+  const row = scale[section]
+  if (outOf !== row.length - 1) return null
   if (!Number.isInteger(correct) || correct < 0 || correct > outOf) return null
-  return scale[correct]
+  return row[correct]
 }
 
 /**

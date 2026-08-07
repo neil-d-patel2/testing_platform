@@ -8,9 +8,9 @@
  * a student — see `stripAnswers` in `./index.ts`.
  */
 
-import type { TestSection } from '../scoring'
+import type { ScoreScale, TestSection } from '../scoring'
 
-export type { TestSection }
+export type { ScoreScale, TestSection }
 
 /** A tabular stimulus attached to a question. */
 export interface QuestionTable {
@@ -114,6 +114,17 @@ export interface Test {
   slug: string
   title: string
   description?: string
+  /**
+   * This form's raw-to-scaled conversion chart. Omitted means the shared
+   * default in `convex/scoring.ts`.
+   *
+   * A harder form earns more scaled points for the same raw count, so a test
+   * calibrated against its own difficulty must carry its own curve or its
+   * scores are simply wrong. Never edit a released test's curve: past reports
+   * were generated from it, and a student who reopens one would see a
+   * different score than the one they were shown.
+   */
+  scale?: ScoreScale
   modules: Array<TestModule>
 }
 

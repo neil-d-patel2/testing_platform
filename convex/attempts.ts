@@ -13,7 +13,7 @@ import { asTimeOption, moduleSeconds } from './timing'
 import type { Doc, Id } from './_generated/dataModel'
 import type { MutationCtx, QueryCtx } from './_generated/server'
 import type { Test } from './content/types'
-import type { TestSection } from './scoring'
+import type { ScoreScale, TestSection } from './scoring'
 import type { TimeOption } from './timing'
 
 /** Argument/field validator for the time accommodation. */
@@ -336,7 +336,7 @@ export const report = query({
       }
     })
 
-    const sections = scoreSections(modules)
+    const sections = scoreSections(modules, test.scale)
 
     return {
       status: attempt.status,
@@ -393,6 +393,7 @@ function scoreSections(
     graded: number
     questions: Array<ClassifiedQuestion>
   }>,
+  scale?: ScoreScale,
 ) {
   return SECTION_ORDER.map((section) => {
     const own = modules.filter((m) => m.section === section)
@@ -410,7 +411,8 @@ function scoreSections(
       // Only a fully graded section gets a scaled score: the chart's rows are
       // counts out of 54 and 44, so scoring 20 of 30 graded questions against
       // it would report the student's missing answer key as missed questions.
-      score: graded === total ? sectionScore(section, correct, total) : null,
+      score:
+        graded === total ? sectionScore(section, correct, total, scale) : null,
       domains: breakdownByDomain(own.flatMap((m) => m.questions)),
     }
   })
