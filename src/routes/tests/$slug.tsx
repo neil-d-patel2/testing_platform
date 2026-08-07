@@ -8,6 +8,8 @@ import {
   ChevronRight,
   Clock,
   Coffee,
+  FileText,
+  Home,
   ImageOff,
   LayoutGrid,
   TriangleAlert,
@@ -93,10 +95,32 @@ function testSeconds(test: PublicTest, option: TimeOption) {
 function TestPage() {
   const { slug } = Route.useParams()
   const { retake } = Route.useSearch()
+  const navigate = Route.useNavigate()
   const { data: test } = useSuspenseQuery(convexQuery(api.tests.get, { slug }))
   const { data: attempt } = useQuery(
     convexQuery(api.attempts.getActive, { testSlug: slug }),
   )
+  const attemptStatus = attempt?.status
+
+  /*
+   * `?retake` asks for the instructions screen over a finished attempt. It is
+   * spent the moment a live attempt exists, and dropping it from the URL then
+   * is what stops it firing a second time: it otherwise sat in the address bar
+   * for the whole sitting and put the student back on the instructions screen —
+   * "Begin test", on the test they just finished — at the instant they
+   * submitted. Replaces rather than pushes, so Back doesn't restore it.
+   */
+  useEffect(() => {
+    if (!retake || attemptStatus === undefined || attemptStatus === 'submitted')
+      return
+
+    void navigate({
+      to: '/tests/$slug',
+      params: { slug },
+      search: {},
+      replace: true,
+    })
+  }, [retake, attemptStatus, navigate, slug])
 
   if (!test) {
     return (
@@ -387,20 +411,30 @@ function Submitted({
         . Nothing else is needed from you.
       </p>
 
-      <Link
-        to="/tests/$slug/report"
-        params={{ slug }}
-        className={`mt-8 rounded-full bg-black px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-80 ${TAP_TARGET} ${FOCUS_RING}`}
-      >
-        See score report
-      </Link>
+      {/*
+        Two ways out, both buttons. The report was previously the only control
+        that looked clickable and "back to tests" was an underlined line of
+        text below it, which read as fine print at the one moment the student
+        is done reading carefully.
+      */}
+      <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+        <Link
+          to="/tests/$slug/report"
+          params={{ slug }}
+          className={`flex items-center justify-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-80 ${TAP_TARGET} ${FOCUS_RING}`}
+        >
+          <FileText size={16} aria-hidden="true" />
+          See score report
+        </Link>
 
-      <Link
-        to="/tests"
-        className={`mt-4 rounded px-2 py-1 text-sm text-neutral-600 underline transition-colors hover:text-black ${FOCUS_RING}`}
-      >
-        Back to all tests
-      </Link>
+        <Link
+          to="/tests"
+          className={`flex items-center justify-center gap-2 rounded-full border border-neutral-400 px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-neutral-100 ${TAP_TARGET} ${FOCUS_RING}`}
+        >
+          <Home size={16} aria-hidden="true" />
+          Back to all tests
+        </Link>
+      </div>
     </main>
   )
 }
