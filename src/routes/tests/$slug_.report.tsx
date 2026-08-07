@@ -207,20 +207,6 @@ function ReportPage() {
                 </span>{' '}
                 correct · {section.answered} answered
               </p>
-              {/*
-                Numbered within the section rather than titled: the module's
-                own title starts with the section name, which the heading two
-                lines up already said.
-              */}
-              <ul className="mt-3 space-y-1 text-sm text-neutral-600">
-                {report.modules
-                  .filter((module) => module.section === section.section)
-                  .map((module, index) => (
-                    <li key={module.id} className="tabular-nums">
-                      Module {index + 1} — {module.correct} of {module.total}
-                    </li>
-                  ))}
-              </ul>
             </div>
           ))}
         </div>
