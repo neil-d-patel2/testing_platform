@@ -2,6 +2,7 @@ import { satPracticeTest1 } from './tests/satPracticeTest1'
 import { satPracticeTest2 } from './tests/satPracticeTest2'
 import { satPracticeTest3 } from './tests/satPracticeTest3'
 import { satPracticeTest4 } from './tests/satPracticeTest4'
+import { satPracticeTest5 } from './tests/satPracticeTest5'
 import type {
   PublicModule,
   PublicTest,
@@ -23,6 +24,7 @@ const ALL_TESTS: Array<Test> = [
   satPracticeTest2,
   satPracticeTest3,
   satPracticeTest4,
+  satPracticeTest5,
 ]
 
 function assertUniqueSlugs(tests: Array<Test>) {
