@@ -197,11 +197,21 @@ $400/yr subscription with the tutor's own tests. Tests are hard-coded into the
 repo by the tutor; students sign in, pick a test, and take it under a time
 limit. `SPEC.md` holds the build plan and is the brief to hand an agent.
 
-SAT Practice Test 1 lives in `convex/content/tests/satPracticeTest1/` (98
-questions, four modules), and now carries its full answer key. `correctAnswer`
+SAT Practice Tests 1 and 2 live in `convex/content/tests/satPracticeTest1/` and
+`…/satPracticeTest2/` (98 questions each, four modules each), and both carry
+their full answer key with College Board domain and skill codes. `correctAnswer`
 and `acceptedAnswers` are still **optional** in the types, though: a test can be
 transcribed and taken before its key is supplied, so scoring must treat a
 missing key as "not gradable", not "wrong".
+
+**Adding a test is two edits.** Write the four module files plus an `index.ts`
+under `convex/content/tests/<name>/`, then add the `Test` to `ALL_TESTS` in
+`convex/content/index.ts`. Everything downstream — the test list, the runner,
+timing, grading, the 200–800 report, the by-domain and by-skill breakdowns — is
+driven off the registry and needs no change. Module and question ids only have
+to be unique **within** a test (both tests use `rw-1`, `rw1-q1`, …); every
+lookup is scoped by `testSlug`. The slug is what must be globally unique, and
+`assertUniqueSlugs` fails the push if it isn't.
 
 **Reports are scored on the 200–800 scale, not as a percentage.** Every module
 declares a `section` (`reading-writing` | `math`); `convex/scoring.ts` folds the

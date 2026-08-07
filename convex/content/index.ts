@@ -1,4 +1,5 @@
 import { satPracticeTest1 } from './tests/satPracticeTest1'
+import { satPracticeTest2 } from './tests/satPracticeTest2'
 import type {
   PublicModule,
   PublicTest,
@@ -15,7 +16,7 @@ import type {
  * since a duplicate would silently shadow a test that students may already
  * have attempts against.
  */
-const ALL_TESTS: Array<Test> = [satPracticeTest1]
+const ALL_TESTS: Array<Test> = [satPracticeTest1, satPracticeTest2]
 
 function assertUniqueSlugs(tests: Array<Test>) {
   const seen = new Set<string>()

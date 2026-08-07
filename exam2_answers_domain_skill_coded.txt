@@ -1,0 +1,107 @@
+Exam 2 Answers — SAT Domain/Skill Coded
+
+Reading and Writing — Module 1
+1. B | Domain: Craft and Structure | Skill: Words in Context
+2. A | Domain: Craft and Structure | Skill: Words in Context
+3. C | Domain: Craft and Structure | Skill: Words in Context
+4. B | Domain: Craft and Structure | Skill: Words in Context
+5. D | Domain: Craft and Structure | Skill: Words in Context
+6. D | Domain: Craft and Structure | Skill: Text Structure and Purpose
+7. D | Domain: Craft and Structure | Skill: Text Structure and Purpose
+8. B | Domain: Craft and Structure | Skill: Cross-Text Connections
+9. D | Domain: Information and Ideas | Skill: Central Ideas and Details
+10. D | Domain: Information and Ideas | Skill: Central Ideas and Details
+11. D | Domain: Information and Ideas | Skill: Central Ideas and Details
+12. C | Domain: Information and Ideas | Skill: Command of Evidence
+13. D | Domain: Information and Ideas | Skill: Command of Evidence
+14. C | Domain: Information and Ideas | Skill: Inferences
+15. A | Domain: Information and Ideas | Skill: Inferences
+16. D | Domain: Standard English Conventions | Skill: Boundaries
+17. A | Domain: Standard English Conventions | Skill: Boundaries
+18. C | Domain: Standard English Conventions | Skill: Form, Structure, and Sense
+19. C | Domain: Standard English Conventions | Skill: Form, Structure, and Sense
+20. C | Domain: Standard English Conventions | Skill: Boundaries
+21. D | Domain: Expression of Ideas | Skill: Transitions
+22. A | Domain: Expression of Ideas | Skill: Transitions
+23. A | Domain: Expression of Ideas | Skill: Transitions
+24. C | Domain: Expression of Ideas | Skill: Rhetorical Synthesis
+25. C | Domain: Expression of Ideas | Skill: Rhetorical Synthesis
+26. A | Domain: Expression of Ideas | Skill: Rhetorical Synthesis
+27. C | Domain: Expression of Ideas | Skill: Rhetorical Synthesis
+
+Reading and Writing — Module 2
+1. B | Domain: Craft and Structure | Skill: Words in Context
+2. D | Domain: Craft and Structure | Skill: Words in Context
+3. A | Domain: Craft and Structure | Skill: Words in Context
+4. A | Domain: Craft and Structure | Skill: Words in Context
+5. D | Domain: Craft and Structure | Skill: Text Structure and Purpose
+6. B | Domain: Craft and Structure | Skill: Text Structure and Purpose
+7. A | Domain: Craft and Structure | Skill: Text Structure and Purpose
+8. D | Domain: Information and Ideas | Skill: Central Ideas and Details
+9. C | Domain: Information and Ideas | Skill: Inferences
+10. C | Domain: Information and Ideas | Skill: Command of Evidence
+11. B | Domain: Information and Ideas | Skill: Command of Evidence
+12. D | Domain: Information and Ideas | Skill: Command of Evidence
+13. B | Domain: Information and Ideas | Skill: Command of Evidence
+14. A | Domain: Information and Ideas | Skill: Inferences
+15. C | Domain: Information and Ideas | Skill: Inferences
+16. D | Domain: Standard English Conventions | Skill: Form, Structure, and Sense
+17. B | Domain: Standard English Conventions | Skill: Boundaries
+18. D | Domain: Standard English Conventions | Skill: Form, Structure, and Sense
+19. A | Domain: Standard English Conventions | Skill: Boundaries
+20. C | Domain: Standard English Conventions | Skill: Form, Structure, and Sense
+21. B | Domain: Standard English Conventions | Skill: Form, Structure, and Sense
+22. D | Domain: Expression of Ideas | Skill: Transitions
+23. D | Domain: Expression of Ideas | Skill: Rhetorical Synthesis
+24. B | Domain: Expression of Ideas | Skill: Rhetorical Synthesis
+25. A | Domain: Expression of Ideas | Skill: Rhetorical Synthesis
+26. A | Domain: Expression of Ideas | Skill: Rhetorical Synthesis
+27. C | Domain: Expression of Ideas | Skill: Rhetorical Synthesis
+
+Math — Module 1
+1. A | Domain: Algebra | Skill: Linear equations in one variable
+2. C | Domain: Advanced Math | Skill: Equivalent expressions
+3. B | Domain: Problem-Solving and Data Analysis | Skill: Ratios, rates, proportional relationships, and units
+4. B | Domain: Algebra | Skill: Linear equations in one variable
+5. A | Domain: Algebra | Skill: Linear functions
+6. B | Domain: Geometry and Trigonometry | Skill: Lines, angles, and triangles
+7. B | Domain: Problem-Solving and Data Analysis | Skill: Probability and conditional probability
+8. A | Domain: Advanced Math | Skill: Nonlinear equations in one variable
+9. C | Domain: Advanced Math | Skill: Nonlinear functions
+10. D | Domain: Algebra | Skill: Linear inequalities in one or two variables
+11. 672 | Domain: Advanced Math | Skill: Nonlinear functions
+12. D | Domain: Algebra | Skill: Linear functions
+13. A | Domain: Advanced Math | Skill: Nonlinear functions
+14. A | Domain: Geometry and Trigonometry | Skill: Circles
+15. -0.089 | Domain: Algebra | Skill: Linear equations in one variable
+16. A | Domain: Algebra | Skill: Linear functions
+17. A | Domain: Advanced Math | Skill: Equivalent expressions
+18. C | Domain: Algebra | Skill: Linear equations in two variables
+19. 742.5 | Domain: Geometry and Trigonometry | Skill: Area and volume
+20. C | Domain: Geometry and Trigonometry | Skill: Lines, angles, and triangles
+21. A | Domain: Advanced Math | Skill: Nonlinear functions
+22. B | Domain: Advanced Math | Skill: Nonlinear functions
+
+Math — Module 2
+1. A | Domain: Problem-Solving and Data Analysis | Skill: Ratios, rates, proportional relationships, and units
+2. A | Domain: Geometry and Trigonometry | Skill: Lines, angles, and triangles
+3. 17 | Domain: Algebra | Skill: Systems of two linear equations in two variables
+4. B | Domain: Algebra | Skill: Linear equations in one variable
+5. D | Domain: Problem-Solving and Data Analysis | Skill: Percentages
+6. B | Domain: Algebra | Skill: Linear functions
+7. A | Domain: Advanced Math | Skill: Systems of equations in two variables
+8. D | Domain: Algebra | Skill: Systems of two linear equations in two variables
+9. A | Domain: Algebra | Skill: Linear inequalities in one or two variables
+10. D | Domain: Algebra | Skill: Linear inequalities in one or two variables
+11. B | Domain: Advanced Math | Skill: Nonlinear equations in one variable
+12. 14300 | Domain: Problem-Solving and Data Analysis | Skill: Percentages
+13. D | Domain: Advanced Math | Skill: Nonlinear functions
+14. B | Domain: Geometry and Trigonometry | Skill: Right triangles and trigonometry
+15. 11 | Domain: Algebra | Skill: Linear equations in two variables
+16. B | Domain: Geometry and Trigonometry | Skill: Area and volume
+17. C | Domain: Problem-Solving and Data Analysis | Skill: One-variable data: Distributions and measures of center and spread
+18. A | Domain: Algebra | Skill: Linear functions
+19. A | Domain: Advanced Math | Skill: Nonlinear functions
+20. 40/9 | Domain: Geometry and Trigonometry | Skill: Right triangles and trigonometry
+21. A | Domain: Geometry and Trigonometry | Skill: Area and volume
+22. -24 | Domain: Advanced Math | Skill: Nonlinear equations in one variable
