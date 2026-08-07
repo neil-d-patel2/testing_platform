@@ -171,9 +171,15 @@ Two consequences worth knowing:
   shipping a frontend against a stale backend. Mint the key with
   `npx convex deployment token create vercel --deployment dev` (`--prod` once
   there is a prod deployment) and set it in Vercel → Settings → Environment
-  Variables, Production scope only. `VITE_CONVEX_URL` no longer needs to be set
-  there — `--cmd-url-env-var-name` supplies it — but `VITE_CONVEX_SITE_URL`
-  still does, and must point at the same deployment.
+  Variables, Production scope only.
+- **Vercel snapshots environment variables when a deployment is created**, not
+  when the build runs. Adding the key does not fix a deployment that is already
+  queued — redeploy after saving it, or the build fails on a key that is
+  visibly present in `vercel env ls`.
+- **Leave `VITE_CONVEX_URL` set in Vercel.** Production builds override it via
+  `--cmd-url-env-var-name`, but preview builds skip the Convex push entirely
+  and would otherwise boot with no deployment URL at all — which the guard in
+  `src/integrations/convex/provider.tsx` turns into a hard throw.
 
 Pushing by hand is still `npx convex dev --once`; that's the only way to update
 the backend without a deploy, and it's what to use while developing.
